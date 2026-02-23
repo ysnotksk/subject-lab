@@ -6,6 +6,10 @@
 
 [English](#english) | [日本語](#japanese)
 
+<p align="center">
+  <img src="docs/images/screenshot.png" alt="SubjectLab screenshot" width="800" />
+</p>
+
 ---
 
 <!-- ═══════════════════════════════════════════════════════ -->
