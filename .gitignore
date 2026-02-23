@@ -124,6 +124,9 @@ out/
 .cursor/
 .cursorignore
 
+# Drafts
+docs/drafts/
+
 # Application Specific
 logo.ai
 subjectlab-v5-spec.md

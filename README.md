@@ -28,6 +28,8 @@ The problem is that **nobody opens an email because it scored 72**. People open 
 
 SubjectLab takes a fundamentally different approach. Instead of abstracting your subject line into a score, it puts it back into the visual context where it actually lives: **the inbox**.
 
+There are professional-grade email tools like [Litmus](https://www.litmus.com/) that handle rendering tests, deliverability, and email analytics. I've used Litmus myself and understand its value — but it's not accessible to every email marketer. I wanted to see if a simpler, focused tool could be built from scratch. So I built one with [Claude](https://claude.ai). The key difference in approach: while tools like Litmus focus on how your email *renders*, SubjectLab focuses on how your email *competes* — recreating the inbox experience itself, the moment of cognitive triage where your subject line either survives or gets buried.
+
 ---
 
 ## Features
@@ -290,6 +292,8 @@ This is what good human-AI collaboration looks like. Not "AI generated this." No
 しかし、**72点だからメールを開く人はいない**。人がメールを開くのは、50通の未読メールが並ぶ受信トレイの中で、一瞬で何かが目に留まったからだ。4インチの画面で、Amazonの配送通知とSlackのダイジェストに挟まれた状態で。
 
 SubjectLabは根本的に異なるアプローチを取る。件名をスコアという抽象に変換するのではなく、件名が実際に存在する視覚的文脈——**受信トレイそのもの**——に戻す。
+
+メールのプロフェッショナルツールとしては[Litmus](https://www.litmus.com/)のような、レンダリングテスト・到達率分析・メールアナリティクスを扱うものがある。Litmusは自分でも使ったことがあり、その価値は理解している——しかし全てのメールマーケターが手を伸ばせるツールではない。もっとシンプルで焦点を絞ったツールをゼロから作れないかと考え、[Claude](https://claude.ai)で構築してみた。アプローチの決定的な違い：Litmusのようなツールがメールの*レンダリング*に注力するのに対し、SubjectLabはメールが*どう競合するか*に注力する——受信トレイ体験そのもの、件名が生き残るか埋もれるかが決まる認知トリアージの瞬間を再現する。
 
 ---
 
