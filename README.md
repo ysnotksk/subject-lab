@@ -557,6 +557,10 @@ Open `http://localhost:5173` — no API keys needed for core features.
 
 APIキー不要でコア機能が動作します。`http://localhost:5173` を開いてください。
 
+> **Live demo vs. local**: The [GitHub Pages version](https://ysnotksk.github.io/subject-lab/) includes all core features but does not include AI analysis. To use AI-powered analysis (OpenAI / Anthropic / Gemini), clone the repo and run locally — bring your own API key.
+>
+> **ライブデモ vs. ローカル**: [GitHub Pages版](https://ysnotksk.github.io/subject-lab/)は全コア機能を搭載していますが、AI分析は含まれていません。AI分析（OpenAI / Anthropic / Gemini）を使うには、リポジトリをクローンしてローカルで実行してください——APIキーは各自でご用意ください。
+
 ---
 
 ## Architecture / アーキテクチャ
