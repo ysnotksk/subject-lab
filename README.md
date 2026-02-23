@@ -557,9 +557,18 @@ Open `http://localhost:5173` — no API keys needed for core features.
 
 APIキー不要でコア機能が動作します。`http://localhost:5173` を開いてください。
 
-> **Live demo vs. local**: The [GitHub Pages version](https://ysnotksk.github.io/subject-lab/) includes all core features but does not include AI analysis. To use AI-powered analysis (OpenAI / Anthropic / Gemini), clone the repo and run locally — bring your own API key.
+> **Live demo vs. local**: The [GitHub Pages version](https://ysnotksk.github.io/subject-lab/) includes all core features but does not include AI analysis. To use AI-powered analysis (OpenAI / Anthropic / Gemini), clone the repo and run locally — bring your own API key. If there's enough demand, we'll publish the AI-enabled version on GitHub Pages as well.
 >
-> **ライブデモ vs. ローカル**: [GitHub Pages版](https://ysnotksk.github.io/subject-lab/)は全コア機能を搭載していますが、AI分析は含まれていません。AI分析（OpenAI / Anthropic / Gemini）を使うには、リポジトリをクローンしてローカルで実行してください——APIキーは各自でご用意ください。
+> **ライブデモ vs. ローカル**: [GitHub Pages版](https://ysnotksk.github.io/subject-lab/)は全コア機能を搭載していますが、AI分析は含まれていません。AI分析（OpenAI / Anthropic / Gemini）を使うには、リポジトリをクローンしてローカルで実行してください——APIキーは各自でご用意ください。リクエストが多ければ、AI対応版もGitHub Pagesで公開予定です。
+>
+> <details>
+> <summary><strong>Q: Is my API key safe? / APIキーの送信は安全？</strong></summary>
+>
+> **Yes. Your API key never leaves your browser.** SubjectLab is a fully static, client-side application — there is no backend server. API calls to OpenAI / Anthropic / Gemini are made directly from your browser to the provider's API endpoint. Your key is stored only in your browser's local storage and is never transmitted to us or any third party. You can verify this yourself: the [source code is fully open](https://github.com/ysnotksk/subject-lab).
+>
+> **はい、安全です。APIキーはブラウザの外に出ません。** SubjectLabは完全に静的なクライアントサイドアプリケーションであり、バックエンドサーバーは存在しません。OpenAI / Anthropic / GeminiへのAPI呼び出しは、ブラウザから各プロバイダーのAPIエンドポイントに直接行われます。キーはブラウザのローカルストレージにのみ保存され、私たちや第三者に送信されることはありません。[ソースコードは完全に公開](https://github.com/ysnotksk/subject-lab)されていますので、ご自身で確認できます。
+>
+> </details>
 
 ---
 
