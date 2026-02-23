@@ -128,6 +128,8 @@ This triage follows a consistent pattern:
 
 SubjectLab is designed to test all three stages: the inbox simulator recreates the paradigmatic field for Stage 3; the device preview tests whether Stage 2 survives truncation; the lock screen preview tests the harshest version of Stage 1+2; and the linguistic analysis checks the syntagmatic integrity of the entire chain.
 
+This model is supported by empirical evidence. Nielsen Norman Group's [eye-tracking studies on email](https://www.nngroup.com/articles/email-newsletters-inbox-congestion/) found that the average time spent on a newsletter after opening is just 51 seconds, and only 19% are fully read — the dominant behavior is scanning, not reading. Their research on [text scanning patterns](https://www.nngroup.com/articles/text-scanning-patterns-eyetracking/) and the [F-shaped reading pattern](https://www.nngroup.com/articles/f-shaped-pattern-reading-web-content-discovered/) further confirms that users process text through rapid visual triage, fixating on the first few words of each line. In an inbox, this means the opening tokens of your subject line carry disproportionate weight.
+
 ---
 
 ### The linguistics of the inbox
@@ -388,6 +390,8 @@ SubjectLabの根本原理は**感覚接地**だ：件名を、それが審判さ
 **段階3：行動。** 送信者＋件名＋プレビューの複合シグナルに基づき、受信者は即断する：今開く、後で見る、アーカイブ、削除。この決定は範列的だ——画面上の他の全てのメッセージに*対して*行われる。
 
 SubjectLabは3段階全てをテストするよう設計されている：受信トレイシミュレーターは段階3の範列的場を再現し、デバイスプレビューは段階2が切り詰めに耐えるかをテストし、ロック画面プレビューは段階1+2の最も過酷なバージョンをテストし、言語構造分析は連鎖全体の連辞的整合性を検査する。
+
+このモデルは実証的なエビデンスに裏付けられている。Nielsen Norman Groupの[メールに関するアイトラッキング研究](https://www.nngroup.com/articles/email-newsletters-inbox-congestion/)によると、ニュースレターを開封後の平均滞在時間はわずか51秒で、完読されるのは19%のみ——支配的な行動は読むことではなくスキャンだ。[テキストスキャニングパターン](https://www.nngroup.com/articles/text-scanning-patterns-eyetracking/)と[F字型読書パターン](https://www.nngroup.com/articles/f-shaped-pattern-reading-web-content-discovered/)に関する研究も、ユーザーが高速な視覚トリアージでテキストを処理し、各行の最初の数語に視線が集中することを確認している。受信トレイにおいては、件名の冒頭トークンが不釣り合いなほど大きな重みを持つことを意味する。
 
 ---
 
