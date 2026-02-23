@@ -6,6 +6,8 @@
 
 [English](#english) | [日本語](#japanese)
 
+**🔗 [Try it live → ysnotksk.github.io/subject-lab](https://ysnotksk.github.io/subject-lab/)**
+
 <p align="center">
   <img src="docs/images/screenshot.png" alt="SubjectLab screenshot" width="800" />
 </p>
@@ -62,6 +64,31 @@ The statistical reality: **A/B testing optimizes the selection from a candidate 
 SubjectLab exists to improve the pool. Before you commit a candidate to an A/B test — before you spend audience on statistical validation — you can see whether it even survives the inbox. Does it get buried? Does the key phrase get cut off on mobile? Does it look identical to three other emails in the same inbox? These are disqualifying failures that don't need an A/B test to detect. They need a pair of eyes and the right context.
 
 **The workflow this tool enables**: generate candidates → stress-test them visually in SubjectLab → eliminate the weak ones → send the survivors to A/B testing. The result: your A/B test compares your best candidates, not your average ones. The ceiling goes up.
+
+### A/B testing is powerful. That's not an excuse to stop thinking.
+
+Let me be clear: A/B testing is one of the most powerful tools in marketing. I've worked in this field long enough to deeply respect the discipline of letting data drive decisions. That respect is exactly why I'm critical of how casually the term gets thrown around.
+
+"Just A/B test it" has become the default answer to every subject line question. But many of the people saying it don't fully grasp what A/B testing means statistically — the sample sizes required, the confidence intervals, the assumptions that must hold for the result to be valid.
+
+And email A/B testing, specifically, has a problem that rarely gets discussed: **you cannot hold the experimental conditions fixed.** While you're splitting variants, send times drift. Recipients open at different times of day, on different devices, in different contexts. One variant might land at 8am when the inbox is fresh; the other might arrive at 2pm, buried under 30 new messages. The "controlled experiment" is not nearly as controlled as we pretend.
+
+Does this mean A/B testing is useless? Of course not. It means we should be honest about what it can and cannot tell us — and stop using it as a substitute for thinking deeply about what we're sending.
+
+### The inbox is not a static canvas
+
+Here is what gets lost when we reduce email to metrics: **there is a real person on the other side, in a specific moment, in a specific context.**
+
+The same email is a completely different experience depending on when and how it arrives:
+
+- **Late at night** — they're in dark mode, scrolling in bed. Your bright promotional tone feels invasive.
+- **During the day** — light mode, scanning quickly between tasks. You have half a second.
+- **Business hours** — your email arrives alongside 20 others. It might never be seen at all.
+- **First thing in the morning** — you might land at the very top of the inbox. Or you might be the notification that wakes them up and annoys them before their coffee.
+
+No scoring tool accounts for this. No A/B test controls for it. But SubjectLab lets you see some of these contexts — dark mode, device frames, inbox position, lock screen notifications — so you can at least *think* about the person receiving your message before you hit send.
+
+**A/B testing tells you which option wins. It does not tell you whether either option was worth sending.** Craft the message first. Respect the inbox. Then test.
 
 ---
 
@@ -298,6 +325,31 @@ A/Bテストはゴールドスタンダードだ。しかし無料ではない�
 SubjectLabはプールの質を改善するために存在する。候補をA/Bテストにかける前に——統計的検証にオーディエンスを費やす前に——その候補が受信トレイで生き残れるかどうかを確認できる。埋もれないか？ キーフレーズがモバイルで切れないか？ 同じ受信トレイの他の3通と見分けがつかなくないか？ これらは失格レベルの欠陥であり、A/Bテストで検出する必要はない。必要なのは一組の目と、正しい文脈だ。
 
 **このツールが可能にするワークフロー**：候補を作る → SubjectLabで視覚的にストレステスト → 弱い候補を排除 → 生き残った候補をA/Bテストへ。結果：A/Bテストは平均的な候補ではなく、最良の候補を比較することになる。天井が上がる。
+
+### A/Bテストは強力だ。だからといって、考えるのをやめていい理由にはならない。
+
+はっきり言っておく：A/Bテストはマーケティングにおいて最も強力なツールの一つだ。この分野で長く働いてきたからこそ、データに基づいて意思決定する規律を深く尊敬している。その尊敬があるからこそ、「A/Bテスト」という言葉が軽く使われることに違和感がある。
+
+「とりあえずA/Bテストしとけば」は、件名に関するあらゆる問いへのデフォルトの答えになっている。しかしそう言っている人の多くは、A/Bテストが統計的に何を意味するか——必要なサンプルサイズ、信頼区間、結果が有効であるために成立しなければならない前提——を完全には理解していない。
+
+そしてメールのA/Bテストには、ほとんど議論されない問題がある：**実験条件を固定できない**ということだ。バリアントを分割している間に配信時間がズレる。受信者は異なる時間帯に、異なるデバイスで、異なる文脈でメールを開く。片方のバリアントは受信トレイが新鮮な朝8時に届き、もう片方は30通の新着メールに埋もれた午後2時に届くかもしれない。「対照実験」は、我々が装っているほど対照的ではない。
+
+これはA/Bテストが無意味だということか？ もちろん違う。A/Bテストに何ができて何ができないかについて正直であるべきだということ——そして、送ろうとしているものについて深く考える代わりにA/Bテストを使うのをやめるべきだということだ。
+
+### 受信トレイは静的なキャンバスではない
+
+メールを指標に還元するとき、見失われるものがある：**受け取る側には実在の人間がいて、特定の瞬間に、特定の文脈の中でメールに出会う**ということだ。
+
+同じメールでも、届くタイミングと状況で体験はまるで変わる：
+
+- **深夜** — ダークモードで、ベッドの中でスクロールしている。明るいプロモーショントーンは侵入的に感じる。
+- **日中** — ライトモード、タスクの合間に素早くスキャン。猶予は0.5秒。
+- **営業時間中** — 他の20通と一緒に届く。一度も見られないかもしれない。
+- **朝イチ** — 受信トレイの一番上に来るかもしれない。あるいは、コーヒーの前に起こす通知になって、ただイラつかせるだけかもしれない。
+
+スコアリングツールはこれを考慮しない。A/Bテストはこれを制御しない。しかしSubjectLabは、こうした文脈の一部を可視化する——ダークモード、デバイスフレーム、受信トレイの位置、ロック画面通知——送信ボタンを押す前に、メッセージを受け取る人のことを少なくとも*考える*ことができるように。
+
+**A/Bテストはどちらの選択肢が勝つかを教える。どちらの選択肢も送る価値があったかどうかは教えない。** まず言葉を磨け。受信トレイに敬意を払え。テストはその後だ。
 
 ---
 
