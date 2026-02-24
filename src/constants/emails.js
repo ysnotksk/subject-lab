@@ -62,6 +62,36 @@ export const INDUSTRY_EMAILS = {
         subject: "【直前割】今週末のホテルが最大40%OFF",
         preview: "空室わずか！お早めにご予約ください",
       },
+      {
+        sender: "ニトリ",
+        subject: "春の模様替えセール：インテリア最大30%OFF",
+        preview: "寝具・カーテン・収納グッズが特別価格に",
+      },
+      {
+        sender: "ビックカメラ",
+        subject: "ポイント還元祭り開催中！最大10%還元",
+        preview: "家電・スマホ・PCがお買い得になっています",
+      },
+      {
+        sender: "無印良品",
+        subject: "週末限定：MUJI会員全品10%OFF",
+        preview: "オンラインストア限定の会員特典をご利用ください",
+      },
+      {
+        sender: "Rakuma",
+        subject: "出品アイテムに「いいね！」がつきました",
+        preview: "5人がウォッチリストに追加しています",
+      },
+      {
+        sender: "ロコンド",
+        subject: "閲覧履歴からあなたへのおすすめシューズ5選",
+        preview: "今なら送料・返品無料でお試しいただけます",
+      },
+      {
+        sender: "ヨドバシ.com",
+        subject: "お急ぎ便：本日23:59までのご注文で翌朝お届け",
+        preview: "全品ポイント還元対象、送料無料でお届け",
+      },
     ],
     en: [
       {
@@ -123,6 +153,36 @@ export const INDUSTRY_EMAILS = {
         sender: "Booking.com",
         subject: "Last-minute deal: 35% off hotels nearby",
         preview: "Limited rooms available at these prices",
+      },
+      {
+        sender: "IKEA",
+        subject: "New spring collection is here",
+        preview: "Refresh your home with fresh seasonal designs",
+      },
+      {
+        sender: "Wayfair",
+        subject: "Items in your wishlist just went on sale",
+        preview: "4 saved items are now discounted — shop now",
+      },
+      {
+        sender: "H&M",
+        subject: "Members-only flash sale: 30% off sitewide",
+        preview: "Today only — sale ends at midnight",
+      },
+      {
+        sender: "Chewy",
+        subject: "Your pet's subscription ships tomorrow",
+        preview: "Blue Buffalo Adult 30 lb — auto-ship order",
+      },
+      {
+        sender: "Best Buy",
+        subject: "Your order is ready for store pickup",
+        preview: "Order #BBO-4921 is waiting at your local store",
+      },
+      {
+        sender: "Instacart",
+        subject: "Your cart is waiting — complete your order",
+        preview: "Items from Whole Foods in your cart may sell out",
       },
     ],
   },
@@ -189,6 +249,36 @@ export const INDUSTRY_EMAILS = {
         subject: "スプリントレビュー：完了タスク12件",
         preview: "Sprint 24の振り返りレポート",
       },
+      {
+        sender: "Asana",
+        subject: "期限切れのタスクが3件あります",
+        preview: "本日中に対応が必要なタスクをご確認ください",
+      },
+      {
+        sender: "Dropbox",
+        subject: "共有フォルダに新しいファイルが追加されました",
+        preview: "田中さんが「企画書_最終版.pdf」をアップロード",
+      },
+      {
+        sender: "Microsoft Teams",
+        subject: "会議の録画が完了しました：全体定例2月",
+        preview: "クラウドに保存されました（58分）",
+      },
+      {
+        sender: "Backlog",
+        subject: "担当課題の期限は明日です",
+        preview: "LP修正対応 — 残り1日",
+      },
+      {
+        sender: "Sansan",
+        subject: "名刺交換した相手が転職しました",
+        preview: "鈴木 健一様が新しい会社に移りました",
+      },
+      {
+        sender: "kintone",
+        subject: "承認依頼が届いています：経費精算 #2024-0291",
+        preview: "山田部長の承認待ちです。ご対応をお願いします",
+      },
     ],
     en: [
       {
@@ -250,6 +340,36 @@ export const INDUSTRY_EMAILS = {
         sender: "Datadog",
         subject: "Alert: API latency above threshold",
         preview: "p99 latency exceeded 500ms on /api/v2",
+      },
+      {
+        sender: "Asana",
+        subject: "3 tasks are overdue in your workspace",
+        preview: "Review and reassign to keep projects on track",
+      },
+      {
+        sender: "Dropbox",
+        subject: "Sarah added 2 files to your shared folder",
+        preview: "Q4_Report_FINAL.pdf and 1 other item",
+      },
+      {
+        sender: "PagerDuty",
+        subject: "CRITICAL: Production database unreachable",
+        preview: "Incident #INC-0482 — on-call team has been notified",
+      },
+      {
+        sender: "Loom",
+        subject: "Marcus shared a video with you",
+        preview: "Product walkthrough — 4 min 32 sec",
+      },
+      {
+        sender: "Airtable",
+        subject: "Your base has reached 1,000 records",
+        preview: "Upgrade for unlimited records and automations",
+      },
+      {
+        sender: "Stripe",
+        subject: "Payout of $4,820.00 is on its way",
+        preview: "Funds will arrive in your bank account by March 18",
       },
     ],
   },
@@ -316,6 +436,36 @@ export const INDUSTRY_EMAILS = {
         subject: "セキュリティ通知：新しいログインがありました",
         preview: "お使いのアカウントに新しいデバイスからの",
       },
+      {
+        sender: "NHKニュース",
+        subject: "【速報】本日の主要ニュース：7つのトピック",
+        preview: "政策変更と市場への影響を詳しく解説",
+      },
+      {
+        sender: "AbemaTV",
+        subject: "見逃した番組が今週末まで無料公開中",
+        preview: "先週話題のドキュメンタリーをチェックしてください",
+      },
+      {
+        sender: "東洋経済オンライン",
+        subject: "「Z世代が変えるマーケティング」5万PV突破",
+        preview: "今週最も読まれたビジネス記事をお届けします",
+      },
+      {
+        sender: "dマガジン",
+        subject: "今月の人気雑誌ランキングTOP10が更新されました",
+        preview: "ビジネス・ライフスタイル誌が続々ラインナップ",
+      },
+      {
+        sender: "Radiko",
+        subject: "フォロー中の番組の新しいエピソードが配信されました",
+        preview: "今週のビジネスラジオ — 最新回（45分）",
+      },
+      {
+        sender: "X (Twitter)",
+        subject: "今日の日本トレンドTOP5をお届けします",
+        preview: "あなたの興味に合わせたトピックをセレクト",
+      },
     ],
     en: [
       {
@@ -377,6 +527,36 @@ export const INDUSTRY_EMAILS = {
         sender: "Apple News",
         subject: "Your morning briefing is ready",
         preview: "Top stories curated for you today",
+      },
+      {
+        sender: "Morning Brew",
+        subject: "Good morning. Here's what matters today.",
+        preview: "Markets, politics, and a dose of wit — 5 min read",
+      },
+      {
+        sender: "The Economist",
+        subject: "This week's essential reads",
+        preview: "Global trade shifts and what they mean for you",
+      },
+      {
+        sender: "Wired",
+        subject: "The AI story everyone is talking about",
+        preview: "Inside the race to build general intelligence",
+      },
+      {
+        sender: "Patreon",
+        subject: "New post from a creator you support",
+        preview: "Behind the scenes: how I built this — exclusive",
+      },
+      {
+        sender: "Audible",
+        subject: "New releases in your genres this week",
+        preview: "6 audiobooks added based on your listening history",
+      },
+      {
+        sender: "Twitch",
+        subject: "A streamer you follow just went live",
+        preview: "Playing: Elden Ring — 1,240 viewers watching now",
       },
     ],
   },
@@ -443,6 +623,36 @@ export const INDUSTRY_EMAILS = {
         subject: "セキュリティ通知：新しいログインがありました",
         preview: "お使いのアカウントに新しいデバイスからの",
       },
+      {
+        sender: "ソニー銀行",
+        subject: "外貨預金の適用金利が変更されました",
+        preview: "米ドルMMF年利が3.2%に引き上げられました",
+      },
+      {
+        sender: "au PAY",
+        subject: "今月のポイント獲得実績：1,280pt",
+        preview: "2月の還元まとめと今月のキャンペーン情報",
+      },
+      {
+        sender: "ビットフライヤー",
+        subject: "ETH価格急騰：24時間で+18%上昇中",
+        preview: "設定した価格アラートに到達しました",
+      },
+      {
+        sender: "イオンカード",
+        subject: "1,200ポイントが月末に失効します",
+        preview: "失効前にポイントをご利用いただけます",
+      },
+      {
+        sender: "ふるさと納税 さとふる",
+        subject: "寄附確認書類の発送が完了しました",
+        preview: "ワンストップ特例申請書を同封しています",
+      },
+      {
+        sender: "MoneyForward ME",
+        subject: "今週の資産増減レポートが届きました",
+        preview: "総資産が先週比+¥32,000増加しています",
+      },
     ],
     en: [
       {
@@ -504,6 +714,36 @@ export const INDUSTRY_EMAILS = {
         sender: "Google",
         subject: "Security alert: New sign-in detected",
         preview: "A new device signed into your account",
+      },
+      {
+        sender: "Fidelity",
+        subject: "Your 401(k) balance crossed $100,000",
+        preview: "See your projected retirement income outlook",
+      },
+      {
+        sender: "Credit Karma",
+        subject: "Your credit score changed: +12 points",
+        preview: "See what's driving the improvement this month",
+      },
+      {
+        sender: "Ally Bank",
+        subject: "You earned $18.42 in interest this month",
+        preview: "Your high-yield savings account is working for you",
+      },
+      {
+        sender: "Schwab",
+        subject: "Dividend payment received: $42.15",
+        preview: "Deposited to your brokerage account today",
+      },
+      {
+        sender: "Acorns",
+        subject: "You've invested $50 automatically this month",
+        preview: "Your round-ups are adding up — review your portfolio",
+      },
+      {
+        sender: "YNAB",
+        subject: "You're over budget in Dining Out",
+        preview: "You've spent $124 of your $100 monthly budget",
       },
     ],
   },
