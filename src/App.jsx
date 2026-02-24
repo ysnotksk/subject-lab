@@ -429,6 +429,9 @@ export default function SubjectLab() {
             </span>
             <button
               onClick={() => setAiDrawerOpen(false)}
+              aria-label={
+                lang === "ja" ? "AI分析を閉じる" : "Close AI Analysis"
+              }
               style={{
                 background: "none",
                 border: "none",

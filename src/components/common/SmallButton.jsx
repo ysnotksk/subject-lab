@@ -16,6 +16,8 @@ export default function SmallButton({
       disabled={disabled}
       onMouseOver={() => setHovered(true)}
       onMouseOut={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
       style={{
         background: active
           ? hovered && !disabled

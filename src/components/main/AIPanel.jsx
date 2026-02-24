@@ -227,6 +227,7 @@ export default function AIPanel({
             setProvider(p);
             setModel(PROVIDER_MODELS[p][0].id);
           }}
+          aria-label={lang === "ja" ? "AIプロバイダー" : "AI provider"}
           style={{ ...inputStyle, cursor: "pointer" }}
         >
           <option value="openai">OpenAI</option>
@@ -238,6 +239,7 @@ export default function AIPanel({
           value={model}
           onChange={(e) => setModel(e.target.value)}
           placeholder={PROVIDER_MODELS[provider][0].label}
+          aria-label={lang === "ja" ? "モデル" : "Model"}
           style={{ ...inputStyle, minWidth: 140 }}
         />
         <datalist id={`models-${provider}`}>
@@ -250,6 +252,7 @@ export default function AIPanel({
           placeholder="API Key"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
+          aria-label="API Key"
           style={{ ...inputStyle, flex: 1, minWidth: 160 }}
         />
         <SmallButton

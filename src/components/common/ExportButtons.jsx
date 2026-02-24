@@ -66,6 +66,9 @@ export default function ExportButtons({ targetRef, filename, lang }) {
         onClick={handleCopy}
         disabled={!!exporting}
         title={lang === "ja" ? "クリップボードにコピー" : "Copy to clipboard"}
+        aria-label={
+          lang === "ja" ? "クリップボードにコピー" : "Copy to clipboard"
+        }
       >
         {exporting === "copy" ? "\u22ef" : copied ? "\u2713" : "\u29c9"}
       </button>
@@ -74,6 +77,7 @@ export default function ExportButtons({ targetRef, filename, lang }) {
         onClick={handleDownload}
         disabled={!!exporting}
         title={lang === "ja" ? "PNGダウンロード" : "Download PNG"}
+        aria-label={lang === "ja" ? "PNGダウンロード" : "Download PNG"}
       >
         {exporting === "download" ? "\u22ef" : "\u2193"}
       </button>

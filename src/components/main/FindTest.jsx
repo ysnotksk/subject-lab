@@ -197,7 +197,16 @@ export default function FindTest({ sender, subject, preview, lang, industry }) {
               return (
                 <div
                   key={i}
+                  role="button"
+                  tabIndex={phase === "running" ? 0 : -1}
                   onClick={() => handleClick(i)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleClick(i);
+                    }
+                  }}
+                  aria-label={`${email.sender}: ${email.subject}`}
                   style={{
                     display: "flex",
                     alignItems: "center",

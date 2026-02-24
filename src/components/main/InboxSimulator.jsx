@@ -523,6 +523,8 @@ export default function InboxSimulator({
             step={10}
             value={browserWidth}
             onChange={(e) => setBrowserWidth(Number(e.target.value))}
+            aria-label={lang === "ja" ? "ブラウザ横幅" : "Browser width"}
+            aria-valuetext={`${browserWidth}px`}
             style={{ flex: 1 }}
           />
           <span
@@ -597,6 +599,10 @@ export default function InboxSimulator({
             setInsertIdx(Number(e.target.value));
             setPosMode("manual");
           }}
+          aria-label={
+            lang === "ja" ? "受信トレイ内の位置" : "Position in inbox"
+          }
+          aria-valuetext={`${insertIdx + 1} / 10`}
           style={{ flex: 1 }}
         />
         <span

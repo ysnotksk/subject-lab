@@ -35,9 +35,21 @@ export default function CandidatesPanel({
           return (
             <div
               key={c.id}
+              role="button"
+              tabIndex={0}
               onClick={() => setActiveId(c.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setActiveId(c.id);
+                }
+              }}
               onMouseOver={() => setHoveredId(c.id)}
               onMouseOut={() => setHoveredId(null)}
+              onFocus={() => setHoveredId(c.id)}
+              onBlur={() => setHoveredId(null)}
+              aria-label={`${lang === "ja" ? "候補" : "Candidate"} ${String.fromCharCode(65 + i)}: ${c.subject || (lang === "ja" ? "未入力" : "Empty")}`}
+              aria-pressed={isActive}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -79,6 +91,7 @@ export default function CandidatesPanel({
               </span>
               {candidates.length > 1 && (
                 <button
+                  aria-label={`${lang === "ja" ? "候補を削除" : "Remove candidate"} ${String.fromCharCode(65 + i)}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     removeCandidate(c.id);

@@ -82,6 +82,7 @@ export default function InputPanel({ active, updateActive, lang }) {
           }}
         >
           <label
+            htmlFor="input-sender"
             style={{ fontSize: 11, fontWeight: 500, color: T.textSecondary }}
           >
             {lang === "ja" ? "送信者名" : "Sender"}
@@ -108,6 +109,11 @@ export default function InputPanel({ active, updateActive, lang }) {
           <button
             onClick={() => fileRef.current?.click()}
             title={lang === "ja" ? "アイコン画像を選択" : "Choose icon image"}
+            aria-label={
+              lang === "ja"
+                ? "送信者アイコン画像を選択"
+                : "Upload sender icon image"
+            }
             style={{
               width: 34,
               height: 34,
@@ -155,11 +161,13 @@ export default function InputPanel({ active, updateActive, lang }) {
                 padding: 0,
               }}
               title={lang === "ja" ? "アイコンを削除" : "Remove icon"}
+              aria-label={lang === "ja" ? "アイコンを削除" : "Remove icon"}
             >
               ✕
             </button>
           )}
           <input
+            id="input-sender"
             value={active.sender}
             onChange={(e) => updateActive("sender", e.target.value)}
             placeholder={lang === "ja" ? "例：Amazon.co.jp" : "e.g. Amazon"}
@@ -181,6 +189,7 @@ export default function InputPanel({ active, updateActive, lang }) {
               }}
             >
               <label
+                htmlFor={`input-${f.key}`}
                 style={{
                   fontSize: 11,
                   fontWeight: 500,
@@ -205,6 +214,7 @@ export default function InputPanel({ active, updateActive, lang }) {
             </div>
             {f.rows === 1 ? (
               <input
+                id={`input-${f.key}`}
                 value={active[f.key]}
                 onChange={(e) => updateActive(f.key, e.target.value)}
                 placeholder={f.ph}
@@ -213,6 +223,7 @@ export default function InputPanel({ active, updateActive, lang }) {
               />
             ) : (
               <textarea
+                id={`input-${f.key}`}
                 value={active[f.key]}
                 onChange={(e) => updateActive(f.key, e.target.value)}
                 placeholder={f.ph}
