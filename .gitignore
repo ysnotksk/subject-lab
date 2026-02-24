@@ -1,76 +1,8 @@
-# Environment and Secrets
-.env
-.env.*
-!.env.example
-*.env
-.envrc
-.secrets/
-.secret/
-secrets/
-credentials/
-
-# Private Keys and Certificates
-*.key
-*.pem
-*.p12
-*.pfx
-*.crt
-*.cer
-*.csr
-id_rsa
-id_dsa
-id_ecdsa
-id_ed25519
-*.gpg
-*.pgp
-
-# IDE and Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-*.sublime-project
-*.sublime-workspace
-
-# OS Files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
-
 # Build and Dependencies
 node_modules/
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-**/lib/
-!frontend/src/lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-venv/
-ENV/
-env/
-.venv
+build/
+out/
 
 # Logs
 *.log
@@ -83,51 +15,18 @@ lerna-debug.log*
 # Testing
 .coverage
 .pytest_cache/
-.tox/
-.hypothesis/
-*.cover
 htmlcov/
-.coverage.*
-
-# Temporary Files
-tmp/
-temp/
-*.tmp
-*.bak
-*.swp
-*.swo
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
 
 # Cache
 .cache/
 .parcel-cache/
 .next/
 .nuxt/
-out/
 .npm/
 .yarn/
 
-# Backup Files
-*.backup
-*.old
-*~
-
-# Claude Code
-.claude/
-.claudeignore
-
-# Cursor
-.cursor/
-.cursorignore
-
-# Drafts
-docs/drafts/
-
-# Application Specific
-logo.ai
-subjectlab-v5-spec.md
-subjectlab-v5.jsx
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.bak
