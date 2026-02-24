@@ -29,6 +29,7 @@ export default function InboxSimulator({
   lang,
   industry,
   highlight,
+  setHighlight,
   exportRef,
 }) {
   const pool = INDUSTRY_EMAILS[industry]?.[lang] || INDUSTRY_EMAILS.ec[lang];
@@ -92,6 +93,8 @@ export default function InboxSimulator({
     input[type=range].pos-slider { -webkit-appearance: none; appearance: none; height: 3px; background: ${T.border}; border-radius: 2px; outline: none; width: 100%; }
     input[type=range].pos-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: ${T.accent}; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
     input[type=range].pos-slider::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: ${T.accent}; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+    .device-screen-scroll { scrollbar-width: none; }
+    .device-screen-scroll::-webkit-scrollbar { display: none; }
   `;
 
   const inboxList = (
@@ -406,13 +409,223 @@ export default function InboxSimulator({
     </div>
   );
 
+  const appHeader = (() => {
+    if (deviceId === "iphone-mail") {
+      return (
+        <div
+          style={{
+            background: dark ? "#1c1c1e" : "#f2f2f7",
+            padding: "8px 16px 6px",
+            borderBottom: `1px solid ${dark ? "#2a2a2a" : "#ddd"}`,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                color: dark ? "#fff" : "#000",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {lang === "ja" ? "受信" : "Inbox"}
+            </span>
+            <span style={{ fontSize: 13, color: "#007aff" }}>
+              {lang === "ja" ? "編集" : "Edit"}
+            </span>
+          </div>
+        </div>
+      );
+    }
+    if (deviceId === "iphone-gmail" || deviceId === "android-gmail") {
+      return (
+        <div
+          style={{
+            background: dark ? "#1c1c1e" : "#fff",
+            padding: "8px 10px",
+            borderBottom: `1px solid ${dark ? "#2a2a2a" : "#e8eaed"}`,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: dark ? "#2a2a2a" : "#f1f3f4",
+              borderRadius: 24,
+              padding: "7px 12px",
+            }}
+          >
+            <span style={{ fontSize: 14, color: dark ? "#aaa" : "#555" }}>
+              ☰
+            </span>
+            <span
+              style={{
+                flex: 1,
+                fontSize: 11,
+                color: dark ? "#aaa" : "#999",
+              }}
+            >
+              {lang === "ja" ? "メールを検索" : "Search in mail"}
+            </span>
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                background: "#ea4335",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 11,
+                color: "#fff",
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              {(sender || "U").charAt(0).toUpperCase()}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (deviceId === "desktop-mail") {
+      return (
+        <div
+          style={{
+            background: dark ? "#2a2a2a" : "#f0f0f0",
+            borderBottom: `1px solid ${dark ? "#3a3a3a" : "#d0d0d0"}`,
+            padding: "6px 12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: dark ? "#ddd" : "#333",
+            }}
+          >
+            {lang === "ja" ? "受信" : "Inbox"}
+          </span>
+          <span
+            style={{
+              fontSize: 16,
+              color: dark ? "#888" : "#aaa",
+              cursor: "default",
+            }}
+          >
+            ✏️
+          </span>
+        </div>
+      );
+    }
+    if (deviceId === "desktop-gmail") {
+      return (
+        <div
+          style={{
+            background: dark ? "#1f1f1f" : "#fff",
+            borderBottom: `1px solid ${dark ? "#333" : "#e8eaed"}`,
+            padding: "8px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#ea4335",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Gmail
+          </span>
+          <div
+            style={{
+              flex: 1,
+              background: dark ? "#2a2a2a" : "#f1f3f4",
+              borderRadius: 20,
+              padding: "5px 14px",
+              fontSize: 11,
+              color: dark ? "#aaa" : "#999",
+            }}
+          >
+            {lang === "ja" ? "メールを検索" : "Search mail"}
+          </div>
+          <div
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: "50%",
+              background: "#ea4335",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 10,
+              color: "#fff",
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
+            {(sender || "U").charAt(0).toUpperCase()}
+          </div>
+        </div>
+      );
+    }
+    if (deviceId === "desktop-outlook") {
+      return (
+        <div
+          style={{
+            background: dark ? "#1a3a5c" : "#0078d4",
+            padding: "6px 14px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#fff",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Outlook
+          </span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)" }}>
+            {lang === "ja" ? "受信トレイ" : "Inbox"}
+          </span>
+        </div>
+      );
+    }
+    return null;
+  })();
+
   const wrappedInbox =
     frame?.type === "iphone" || frame?.type === "android" ? (
-      <MobileFrame type={frame.type} screenType={frame.screenType} dark={dark}>
+      <MobileFrame
+        type={frame.type}
+        screenType={frame.screenType}
+        dark={dark}
+        screenMaxHeight={640}
+      >
+        {appHeader}
         {inboxList}
       </MobileFrame>
     ) : frame?.type === "browser" ? (
       <BrowserFrame title={device?.name || "Desktop"} dark={dark}>
+        {appHeader}
         {inboxList}
       </BrowserFrame>
     ) : (
@@ -433,12 +646,75 @@ export default function InboxSimulator({
       <SectionHeader
         title={lang === "ja" ? "受信トレイ" : "Inbox Simulator"}
         right={
-          <>
-            <ExportButtons targetRef={exportRef} filename="inbox" lang={lang} />
+          <ExportButtons targetRef={exportRef} filename="inbox" lang={lang} />
+        }
+      />
+
+      {/* Control bar */}
+      <div
+        style={{
+          background: T.surface,
+          border: `1px solid ${T.border}`,
+          borderRadius: T.radius,
+          marginBottom: 12,
+          overflow: "hidden",
+        }}
+      >
+        {/* Row 1: device selector + dark/shuffle */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            padding: "8px 12px",
+          }}
+        >
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {DEVICES.map((d) => {
+              const active = d.id === deviceId;
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => setDeviceId(d.id)}
+                  style={{
+                    padding: "3px 9px",
+                    borderRadius: 5,
+                    border: `1px solid ${active ? T.accent : T.border}`,
+                    fontSize: 10,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    fontFamily: T.font,
+                    background: active ? T.accentLight : T.bg,
+                    color: active ? T.accentDark : T.textMuted,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {d.type === "mobile" ? "\u25c9" : "\u25fb"} {d.name}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+            {setHighlight && (
+              <SmallButton
+                onClick={() => setHighlight(!highlight)}
+                active={highlight}
+                style={{ fontSize: 10 }}
+              >
+                {highlight
+                  ? lang === "ja"
+                    ? "ハイライト ON"
+                    : "Highlight ON"
+                  : lang === "ja"
+                    ? "ハイライト"
+                    : "Highlight"}
+              </SmallButton>
+            )}
             <SmallButton
               onClick={() => setDark(!dark)}
               active={dark}
-              style={{ padding: "4px 8px", fontSize: 11 }}
+              style={{ fontSize: 10 }}
             >
               {dark
                 ? lang === "ja"
@@ -448,228 +724,215 @@ export default function InboxSimulator({
                   ? "ダーク"
                   : "Dark"}
             </SmallButton>
-            <SmallButton onClick={doShuffle}>
+            <SmallButton onClick={doShuffle} style={{ fontSize: 10 }}>
               {lang === "ja" ? "シャッフル" : "Shuffle"}
             </SmallButton>
-          </>
-        }
-      />
+          </div>
+        </div>
 
-      {/* Device selector */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          marginBottom: 10,
-          flexWrap: "wrap",
-        }}
-      >
-        {DEVICES.map((d) => {
-          const active = d.id === deviceId;
-          return (
-            <button
-              key={d.id}
-              onClick={() => setDeviceId(d.id)}
-              style={{
-                padding: "4px 10px",
-                borderRadius: 5,
-                border: `1px solid ${active ? T.accent : T.border}`,
-                fontSize: 10,
-                fontWeight: 500,
-                cursor: "pointer",
-                fontFamily: T.font,
-                background: active ? T.accentLight : T.surface,
-                color: active ? T.accentDark : T.textMuted,
-                transition: "all 0.15s",
-              }}
-            >
-              {d.type === "mobile" ? "\u25c9" : "\u25fb"} {d.name}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Browser width slider (desktop devices only) */}
-      {!isMobile && (
+        {/* Row 2: sliders */}
         <div
           style={{
+            borderTop: `1px solid ${T.borderSubtle}`,
+            padding: "7px 12px",
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            marginBottom: 8,
-            padding: "8px 12px",
-            background: T.bg,
-            borderRadius: T.radius,
-            border: `1px solid ${T.borderSubtle}`,
+            gap: 16,
           }}
         >
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: T.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              flexShrink: 0,
-            }}
+          {/* Position slider */}
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}
           >
-            {lang === "ja" ? "横幅" : "Width"}
-          </span>
-          <input
-            type="range"
-            className="pos-slider"
-            min={400}
-            max={900}
-            step={10}
-            value={browserWidth}
-            onChange={(e) => setBrowserWidth(Number(e.target.value))}
-            aria-label={lang === "ja" ? "ブラウザ横幅" : "Browser width"}
-            aria-valuetext={`${browserWidth}px`}
-            style={{ flex: 1 }}
-          />
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: T.text,
-              fontVariantNumeric: "tabular-nums",
-              minWidth: 44,
-              textAlign: "right",
-            }}
-          >
-            {browserWidth}px
-          </span>
-          {chrome.layoutAuto && (
             <span
               style={{
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: 600,
-                color: isHorizontal ? T.accent : T.warning,
-                background: isHorizontal ? T.accentLight : T.warningLight,
-                padding: "2px 6px",
-                borderRadius: 4,
+                color: T.textMuted,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
                 flexShrink: 0,
-                transition: "all 0.2s",
               }}
             >
-              {isHorizontal
-                ? lang === "ja"
-                  ? "横並び"
-                  : "Row"
-                : lang === "ja"
-                  ? "縦積み"
-                  : "Stack"}
+              {lang === "ja" ? "位置" : "Pos"}
             </span>
+            <input
+              type="range"
+              className="pos-slider"
+              min={0}
+              max={9}
+              value={insertIdx}
+              onChange={(e) => {
+                setInsertIdx(Number(e.target.value));
+                setPosMode("manual");
+              }}
+              aria-label={
+                lang === "ja" ? "受信トレイ内の位置" : "Position in inbox"
+              }
+              aria-valuetext={`${insertIdx + 1} / 10`}
+              style={{ flex: 1 }}
+            />
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: T.text,
+                fontVariantNumeric: "tabular-nums",
+                minWidth: 36,
+                textAlign: "right",
+              }}
+            >
+              {insertIdx + 1}/10
+            </span>
+            <button
+              onClick={() => {
+                if (posMode === "manual") {
+                  setInsertIdx(Math.floor(Math.random() * 10));
+                  setPosMode("random");
+                } else {
+                  setPosMode("manual");
+                }
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: 10,
+                fontWeight: 500,
+                color: posMode === "random" ? T.accent : T.textMuted,
+                cursor: "pointer",
+                padding: "2px 4px",
+                borderRadius: 4,
+                flexShrink: 0,
+                transition: "color 0.15s",
+              }}
+              title={
+                posMode === "random"
+                  ? lang === "ja"
+                    ? "シャッフル時にランダム配置"
+                    : "Random on shuffle"
+                  : lang === "ja"
+                    ? "位置を固定中"
+                    : "Position locked"
+              }
+            >
+              {posMode === "random"
+                ? lang === "ja"
+                  ? "自動"
+                  : "Auto"
+                : lang === "ja"
+                  ? "固定"
+                  : "Lock"}
+            </button>
+          </div>
+
+          {/* Width slider (desktop only) */}
+          {!isMobile && (
+            <>
+              <div
+                style={{
+                  width: 1,
+                  height: 16,
+                  background: T.borderSubtle,
+                  flexShrink: 0,
+                }}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flex: 1,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: T.textMuted,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    flexShrink: 0,
+                  }}
+                >
+                  {lang === "ja" ? "横幅" : "Width"}
+                </span>
+                <input
+                  type="range"
+                  className="pos-slider"
+                  min={400}
+                  max={900}
+                  step={10}
+                  value={browserWidth}
+                  onChange={(e) => setBrowserWidth(Number(e.target.value))}
+                  aria-label={lang === "ja" ? "ブラウザ横幅" : "Browser width"}
+                  aria-valuetext={`${browserWidth}px`}
+                  style={{ flex: 1 }}
+                />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: T.text,
+                    fontVariantNumeric: "tabular-nums",
+                    minWidth: 44,
+                    textAlign: "right",
+                  }}
+                >
+                  {browserWidth}px
+                </span>
+                {chrome.layoutAuto && (
+                  <span
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 600,
+                      color: isHorizontal ? T.accent : T.warning,
+                      background: isHorizontal ? T.accentLight : T.warningLight,
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      flexShrink: 0,
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {isHorizontal
+                      ? lang === "ja"
+                        ? "横並び"
+                        : "Row"
+                      : lang === "ja"
+                        ? "縦積み"
+                        : "Stack"}
+                  </span>
+                )}
+              </div>
+            </>
           )}
         </div>
-      )}
-
-      {/* Position slider */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 16,
-          padding: "8px 12px",
-          background: T.bg,
-          borderRadius: T.radius,
-          border: `1px solid ${T.borderSubtle}`,
-        }}
-      >
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            color: T.textMuted,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
-            flexShrink: 0,
-          }}
-        >
-          {lang === "ja" ? "位置" : "Position"}
-        </span>
-        <input
-          type="range"
-          className="pos-slider"
-          min={0}
-          max={9}
-          value={insertIdx}
-          onChange={(e) => {
-            setInsertIdx(Number(e.target.value));
-            setPosMode("manual");
-          }}
-          aria-label={
-            lang === "ja" ? "受信トレイ内の位置" : "Position in inbox"
-          }
-          aria-valuetext={`${insertIdx + 1} / 10`}
-          style={{ flex: 1 }}
-        />
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: T.text,
-            fontVariantNumeric: "tabular-nums",
-            minWidth: 44,
-            textAlign: "right",
-          }}
-        >
-          {insertIdx + 1} / 10
-        </span>
-        <button
-          onClick={() => {
-            setPosMode(posMode === "random" ? "manual" : "random");
-            if (posMode === "manual") {
-              setInsertIdx(Math.floor(Math.random() * 10));
-              setPosMode("random");
-            }
-          }}
-          style={{
-            background: "none",
-            border: "none",
-            fontSize: 10,
-            fontWeight: 500,
-            color: posMode === "random" ? T.accent : T.textMuted,
-            cursor: "pointer",
-            padding: "2px 6px",
-            borderRadius: 4,
-            flexShrink: 0,
-            transition: "color 0.15s",
-          }}
-          title={
-            posMode === "random"
-              ? lang === "ja"
-                ? "シャッフル時にランダム配置"
-                : "Random on shuffle"
-              : lang === "ja"
-                ? "位置を固定中"
-                : "Position locked"
-          }
-        >
-          {posMode === "random"
-            ? lang === "ja"
-              ? "自動"
-              : "Auto"
-            : lang === "ja"
-              ? "固定"
-              : "Locked"}
-        </button>
       </div>
 
       <div
-        ref={exportRef}
-        style={
-          !isMobile
-            ? {
-                maxWidth: browserWidth,
-                margin: "0 auto",
-                transition: "max-width 0.15s",
-              }
-            : undefined
-        }
+        style={{
+          background: T.bg,
+          border: `1px solid ${T.border}`,
+          borderRadius: T.radius,
+          padding: "24px 20px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-start",
+        }}
       >
-        {wrappedInbox}
+        <div
+          ref={exportRef}
+          style={
+            !isMobile
+              ? {
+                  maxWidth: browserWidth,
+                  width: "100%",
+                  transition: "max-width 0.15s",
+                }
+              : undefined
+          }
+        >
+          {wrappedInbox}
+        </div>
       </div>
     </div>
   );

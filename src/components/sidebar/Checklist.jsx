@@ -16,23 +16,32 @@ export default function Checklist({ lang }) {
   };
   const done = checks.filter(Boolean).length;
 
+  const summaryStyle = `
+    details.checklist-details > summary { list-style: none; cursor: pointer; }
+    details.checklist-details > summary::-webkit-details-marker { display: none; }
+    details.checklist-details > summary::marker { display: none; content: ""; }
+  `;
+
   return (
-    <div>
-      <SectionHeader
-        title={lang === "ja" ? "送信前チェック" : "Pre-send checklist"}
-        right={
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: done === items.length ? T.success : T.textMuted,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {done}/{items.length}
-          </span>
-        }
-      />
+    <details className="checklist-details" open>
+      <style dangerouslySetInnerHTML={{ __html: summaryStyle }} />
+      <summary>
+        <SectionHeader
+          title={lang === "ja" ? "送信前チェック" : "Pre-send checklist"}
+          right={
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: done === items.length ? T.success : T.textMuted,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {done}/{items.length}
+            </span>
+          }
+        />
+      </summary>
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {items.map((item, i) => (
           <label
@@ -73,6 +82,6 @@ export default function Checklist({ lang }) {
           </label>
         ))}
       </div>
-    </div>
+    </details>
   );
 }

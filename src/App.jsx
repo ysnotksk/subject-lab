@@ -20,10 +20,17 @@ const AIPanel = ENABLE_AI
 export default function SubjectLab() {
   const [lang, setLang] = useState(() => load("lang", "ja"));
   const [industry, setIndustry] = useState(() => load("industry", "ec"));
+  const DEFAULT_CANDIDATE = {
+    id: 1,
+    sender: "Subject Lab Inc.",
+    senderIcon: import.meta.env.BASE_URL + "logo.svg",
+    subject: "Your subject line, tested before you send",
+    preview: "See how it looks on iPhone, Gmail, and Outlook in seconds",
+    note: "",
+  };
+
   const [candidates, setCandidates] = useState(() =>
-    load("candidates", [
-      { id: 1, sender: "", subject: "", preview: "", note: "" },
-    ]),
+    load("candidates", [DEFAULT_CANDIDATE]),
   );
   const [activeId, setActiveId] = useState(() => load("activeId", 1));
   const [highlight, setHighlight] = useState(() => load("highlight", false));
@@ -172,38 +179,6 @@ export default function SubjectLab() {
               border: `1px solid ${T.border}`,
             }}
           >
-            {industryKeys.map((k) => (
-              <button
-                key={k}
-                onClick={() => setIndustry(k)}
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 5,
-                  border: "none",
-                  fontSize: 11,
-                  cursor: "pointer",
-                  fontWeight: 500,
-                  fontFamily: T.font,
-                  background: industry === k ? T.surface : "transparent",
-                  color: industry === k ? T.text : T.textMuted,
-                  boxShadow: industry === k ? T.shadow : "none",
-                  transition: "all 0.15s",
-                }}
-              >
-                {INDUSTRY_EMAILS[k].label[lang]}
-              </button>
-            ))}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: 1,
-              background: T.bg,
-              borderRadius: 6,
-              padding: 2,
-              border: `1px solid ${T.border}`,
-            }}
-          >
             {["ja", "en"].map((l) => (
               <button
                 key={l}
@@ -242,6 +217,39 @@ export default function SubjectLab() {
       >
         {/* LEFT SIDEBAR */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 1,
+              background: T.bg,
+              borderRadius: 6,
+              padding: 2,
+              border: `1px solid ${T.border}`,
+            }}
+          >
+            {industryKeys.map((k) => (
+              <button
+                key={k}
+                onClick={() => setIndustry(k)}
+                style={{
+                  flex: 1,
+                  padding: "4px 0",
+                  borderRadius: 5,
+                  border: "none",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  fontFamily: T.font,
+                  background: industry === k ? T.surface : "transparent",
+                  color: industry === k ? T.text : T.textMuted,
+                  boxShadow: industry === k ? T.shadow : "none",
+                  transition: "all 0.15s",
+                }}
+              >
+                {INDUSTRY_EMAILS[k].label[lang]}
+              </button>
+            ))}
+          </div>
           <InputPanel active={active} updateActive={updateActive} lang={lang} />
           <CandidatesPanel
             candidates={candidates}
@@ -251,30 +259,6 @@ export default function SubjectLab() {
             removeCandidate={removeCandidate}
             lang={lang}
           />
-
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 12px",
-              background: T.surface,
-              borderRadius: T.radius,
-              border: `1px solid ${T.border}`,
-              cursor: "pointer",
-              fontSize: 12,
-              color: T.textSecondary,
-              boxShadow: T.shadow,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={highlight}
-              onChange={() => setHighlight(!highlight)}
-              style={{ accentColor: T.accent, width: 14, height: 14 }}
-            />
-            {lang === "ja" ? "ハイライト表示" : "Highlight my email"}
-          </label>
 
           <Card style={{ padding: 14 }}>
             <Checklist lang={lang} />
@@ -294,14 +278,30 @@ export default function SubjectLab() {
             }}
           >
             {[
-              { key: "inbox", label: lang === "ja" ? "受信トレイ" : "Inbox" },
+              { key: "inbox", icon: "\u2709", ja: "受信トレイ", en: "Inbox" },
               {
-                key: "findtest",
-                label: lang === "ja" ? "3秒チャレンジ" : "3s Challenge",
+                key: "device",
+                icon: "\u25E7",
+                ja: "デバイス別",
+                en: "Devices",
               },
               {
                 key: "notification",
-                label: lang === "ja" ? "ロック画面" : "Lock Screen",
+                icon: "\uD83D\uDD14",
+                ja: "通知画面",
+                en: "Notifications",
+              },
+              {
+                key: "findtest",
+                icon: "\u23F1",
+                ja: "3秒テスト",
+                en: "3s Test",
+              },
+              {
+                key: "analysis",
+                icon: "\u2696",
+                ja: "件名チェック",
+                en: "Analysis",
               },
             ].map((t) => (
               <button
@@ -310,10 +310,10 @@ export default function SubjectLab() {
                 className={`tab-btn${activeTab === t.key ? " tab-active" : ""}`}
                 style={{
                   flex: 1,
-                  padding: "8px 12px",
+                  padding: "7px 8px",
                   borderRadius: 6,
                   border: "none",
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 500,
                   cursor: "pointer",
                   fontFamily: T.font,
@@ -323,7 +323,7 @@ export default function SubjectLab() {
                   transition: "all 0.15s",
                 }}
               >
-                {t.label}
+                {t.icon} {lang === "ja" ? t.ja : t.en}
               </button>
             ))}
           </div>
@@ -338,16 +338,18 @@ export default function SubjectLab() {
                 lang={lang}
                 industry={industry}
                 highlight={highlight}
+                setHighlight={setHighlight}
                 exportRef={inboxRef}
               />
             )}
-            {activeTab === "findtest" && (
-              <FindTest
+            {activeTab === "device" && (
+              <DevicePreview
                 sender={active.sender}
+                senderIcon={active.senderIcon}
                 subject={active.subject}
                 preview={active.preview}
                 lang={lang}
-                industry={industry}
+                exportRef={deviceRef}
               />
             )}
             {activeTab === "notification" && (
@@ -359,27 +361,24 @@ export default function SubjectLab() {
                 exportRef={notifRef}
               />
             )}
-          </Card>
-
-          <Card variant="analysis" style={{ padding: 20 }}>
-            <DevicePreview
-              sender={active.sender}
-              senderIcon={active.senderIcon}
-              subject={active.subject}
-              preview={active.preview}
-              lang={lang}
-              exportRef={deviceRef}
-            />
-          </Card>
-
-          <Card variant="analysis" style={{ padding: 20 }}>
-            <LinguisticAnalysis
-              sender={active.sender}
-              subject={active.subject}
-              preview={active.preview}
-              lang={lang}
-              industry={industry}
-            />
+            {activeTab === "findtest" && (
+              <FindTest
+                sender={active.sender}
+                subject={active.subject}
+                preview={active.preview}
+                lang={lang}
+                industry={industry}
+              />
+            )}
+            {activeTab === "analysis" && (
+              <LinguisticAnalysis
+                sender={active.sender}
+                subject={active.subject}
+                preview={active.preview}
+                lang={lang}
+                industry={industry}
+              />
+            )}
           </Card>
         </div>
       </div>
