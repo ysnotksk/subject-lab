@@ -9,21 +9,60 @@ import SmallButton from "../common/SmallButton";
 import ExportButtons from "../common/ExportButtons";
 
 const PROVIDER_MODELS = {
+  ollama: [
+    { id: "qwen3:1.7b", label: "Qwen 3 1.7B" },
+    { id: "qwen3:8b", label: "Qwen 3 8B" },
+    { id: "gemma3:4b", label: "Gemma 3 4B" },
+    { id: "llama3.2", label: "Llama 3.2" },
+    { id: "phi4-mini", label: "Phi-4 Mini" },
+  ],
   openai: [
-    { id: "gpt-4.1-nano", label: "GPT-4.1 Nano" },
-    { id: "gpt-4.1-mini", label: "GPT-4.1 Mini" },
-    { id: "gpt-4.1", label: "GPT-4.1" },
+    { id: "gpt-4.1-nano", label: "GPT-4.1 Nano — $0.10/M" },
+    { id: "gpt-4.1-mini", label: "GPT-4.1 Mini — $0.40/M" },
+    { id: "gpt-4.1", label: "GPT-4.1 — $2.00/M" },
+    { id: "gpt-4o-mini", label: "GPT-4o Mini — $0.15/M" },
+    { id: "gpt-4o", label: "GPT-4o — $2.50/M" },
+    { id: "o4-mini", label: "o4-mini — $1.10/M" },
+    { id: "o3", label: "o3 — reasoning" },
+    { id: "o3-pro", label: "o3-pro — reasoning" },
   ],
   anthropic: [
-    { id: "claude-haiku-4-5-20251001", label: "Claude 4.5 Haiku" },
-    { id: "claude-sonnet-4-5-20250514", label: "Claude 4.5 Sonnet" },
-    { id: "claude-opus-4-20250514", label: "Claude Opus 4" },
+    { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 — $0.80/M" },
+    { id: "claude-sonnet-4-5-20250514", label: "Sonnet 4.5 — $3.00/M" },
+    { id: "claude-sonnet-4-6", label: "Sonnet 4.6 — $3.00/M" },
+    { id: "claude-opus-4-20250514", label: "Opus 4 — $15.00/M" },
+    { id: "claude-opus-4-6", label: "Opus 4.6 — $15.00/M" },
   ],
   gemini: [
-    { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
-    { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-    { id: "gemini-2.5-pro-preview-06-05", label: "Gemini 2.5 Pro" },
+    { id: "gemini-2.0-flash-lite", label: "2.0 Flash Lite — Free tier" },
+    { id: "gemini-2.0-flash", label: "2.0 Flash — Free tier" },
+    { id: "gemini-2.5-flash", label: "2.5 Flash — $0.15/M" },
+    { id: "gemini-2.5-pro", label: "2.5 Pro — $1.25/M" },
+    { id: "gemini-3-flash-preview", label: "3 Flash (preview)" },
+    { id: "gemini-3-pro-preview", label: "3 Pro (preview)" },
   ],
+};
+
+const isOllamaLike = (provider) => provider === "ollama";
+
+/** Extract and parse JSON from LLM response that may contain markdown or prose */
+const extractJSON = (raw) => {
+  // Try direct parse first
+  try {
+    return JSON.parse(raw);
+  } catch {}
+  // Strip markdown code fences
+  let cleaned = raw.replace(/```(?:json)?\s*/gi, "").replace(/```/g, "");
+  // Try to find JSON object/array
+  const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+  if (match) {
+    try {
+      return JSON.parse(match[1]);
+    } catch {}
+  }
+  throw new Error(
+    `Failed to parse JSON from response: ${raw.slice(0, 120)}...`,
+  );
 };
 
 export default function AIPanel({
@@ -38,8 +77,13 @@ export default function AIPanel({
   candidatesCount,
 }) {
   const [apiKey, setApiKey] = useState("");
-  const [provider, setProvider] = useState("openai");
-  const [model, setModel] = useState(PROVIDER_MODELS.openai[0].id);
+  const [provider, setProvider] = useState("ollama");
+  const [model, setModel] = useState(PROVIDER_MODELS.ollama[0].id);
+  const [ollamaEndpoint, setOllamaEndpoint] = useState(() =>
+    load("ollamaEndpoint", "http://localhost:11434"),
+  );
+  const [ollamaModels, setOllamaModels] = useState([]);
+  const [ollamaStatus, setOllamaStatus] = useState("unknown"); // "unknown" | "connected" | "error"
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -56,6 +100,35 @@ export default function AIPanel({
   const [genError, setGenError] = useState(null);
 
   const resultRef = useRef(null);
+
+  useEffect(() => save("ollamaEndpoint", ollamaEndpoint), [ollamaEndpoint]);
+
+  const fetchOllamaModels = (endpoint) => {
+    const base = endpoint.replace(/\/+$/, "");
+    setOllamaStatus("unknown");
+    fetch(`${base}/api/tags`)
+      .then((r) => r.json())
+      .then((data) => {
+        const models = (data.models || []).map((m) => ({
+          id: m.name,
+          label: m.name,
+        }));
+        setOllamaModels(models);
+        setOllamaStatus("connected");
+        if (models.length && !models.find((m) => m.id === model)) {
+          setModel(models[0].id);
+        }
+      })
+      .catch(() => {
+        setOllamaModels([]);
+        setOllamaStatus("error");
+      });
+  };
+
+  useEffect(() => {
+    if (!isOllamaLike(provider)) return;
+    fetchOllamaModels(ollamaEndpoint);
+  }, [provider]);
 
   useEffect(() => save("customPrompt", customPrompt), [customPrompt]);
 
@@ -121,30 +194,35 @@ export default function AIPanel({
   };
 
   const analyze = async () => {
-    if (!apiKey || !subject) return;
+    if ((!apiKey && !isOllamaLike(provider)) || !subject) return;
     setLoading(true);
     setError(null);
     setResult(null);
     const promptText = customPrompt || buildPrompt();
     try {
       let data;
-      if (provider === "openai") {
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      if (provider === "openai" || isOllamaLike(provider)) {
+        const url = isOllamaLike(provider)
+          ? `${ollamaEndpoint.replace(/\/+$/, "")}/v1/chat/completions`
+          : "https://api.openai.com/v1/chat/completions";
+        const headers = { "Content-Type": "application/json" };
+        if (!isOllamaLike(provider)) headers.Authorization = `Bearer ${apiKey}`;
+        const res = await fetch(url, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
+          headers,
           body: JSON.stringify({
             model,
             messages: [{ role: "user", content: promptText }],
             temperature: 0.7,
-            response_format: { type: "json_object" },
+            ...(isOllamaLike(provider)
+              ? {}
+              : { response_format: { type: "json_object" } }),
           }),
         });
         data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        setResult(JSON.parse(data.choices[0].message.content));
+        const raw = data.choices[0].message.content;
+        setResult(extractJSON(raw));
       } else if (provider === "anthropic") {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
@@ -167,11 +245,7 @@ export default function AIPanel({
         });
         data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        setResult(
-          JSON.parse(
-            data.content[0].text.replace(/```json\n?|```\n?/g, "").trim(),
-          ),
-        );
+        setResult(extractJSON(data.content[0].text));
       } else {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -197,13 +271,7 @@ export default function AIPanel({
         );
         data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        setResult(
-          JSON.parse(
-            data.candidates[0].content.parts[0].text
-              .replace(/```json\n?|```\n?/g, "")
-              .trim(),
-          ),
-        );
+        setResult(extractJSON(data.candidates[0].content.parts[0].text));
       }
     } catch (e) {
       setError(e.message);
@@ -224,30 +292,35 @@ Respond as JSON: {"variants":[{"subject":"...","preview":"...","rationale":"..."
   };
 
   const generate = async () => {
-    if (!apiKey || !genIntent) return;
+    if ((!apiKey && !isOllamaLike(provider)) || !genIntent) return;
     setGenLoading(true);
     setGenError(null);
     setGenResult(null);
     const promptText = buildGenPrompt();
     try {
       let data;
-      if (provider === "openai") {
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      if (provider === "openai" || isOllamaLike(provider)) {
+        const url = isOllamaLike(provider)
+          ? `${ollamaEndpoint.replace(/\/+$/, "")}/v1/chat/completions`
+          : "https://api.openai.com/v1/chat/completions";
+        const headers = { "Content-Type": "application/json" };
+        if (!isOllamaLike(provider)) headers.Authorization = `Bearer ${apiKey}`;
+        const res = await fetch(url, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
-          },
+          headers,
           body: JSON.stringify({
             model,
             messages: [{ role: "user", content: promptText }],
             temperature: 0.9,
-            response_format: { type: "json_object" },
+            ...(isOllamaLike(provider)
+              ? {}
+              : { response_format: { type: "json_object" } }),
           }),
         });
         data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        setGenResult(JSON.parse(data.choices[0].message.content));
+        const raw = data.choices[0].message.content;
+        setGenResult(extractJSON(raw));
       } else if (provider === "anthropic") {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
@@ -270,11 +343,7 @@ Respond as JSON: {"variants":[{"subject":"...","preview":"...","rationale":"..."
         });
         data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        setGenResult(
-          JSON.parse(
-            data.content[0].text.replace(/```json\n?|```\n?/g, "").trim(),
-          ),
-        );
+        setGenResult(extractJSON(data.content[0].text));
       } else {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -298,13 +367,7 @@ Respond as JSON: {"variants":[{"subject":"...","preview":"...","rationale":"..."
         );
         data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        setGenResult(
-          JSON.parse(
-            data.candidates[0].content.parts[0].text
-              .replace(/```json\n?|```\n?/g, "")
-              .trim(),
-          ),
-        );
+        setGenResult(extractJSON(data.candidates[0].content.parts[0].text));
       }
     } catch (e) {
       setGenError(e.message);
@@ -367,74 +430,186 @@ Respond as JSON: {"variants":[{"subject":"...","preview":"...","rationale":"..."
         ))}
       </div>
 
-      {/* Shared config row */}
+      {/* Shared config */}
       <div
-        style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          marginBottom: 16,
+          padding: 12,
+          background: T.bg,
+          borderRadius: T.radius,
+          border: `1px solid ${T.borderSubtle}`,
+        }}
       >
-        <select
-          value={provider}
-          onChange={(e) => {
-            const p = e.target.value;
-            setProvider(p);
-            setModel(PROVIDER_MODELS[p][0].id);
-          }}
-          aria-label={lang === "ja" ? "AIプロバイダー" : "AI provider"}
-          style={{ ...inputStyle, cursor: "pointer" }}
-        >
-          <option value="openai">OpenAI</option>
-          <option value="anthropic">Anthropic</option>
-          <option value="gemini">Gemini</option>
-        </select>
-        <input
-          list={`models-${provider}`}
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          placeholder={PROVIDER_MODELS[provider][0].label}
-          aria-label={lang === "ja" ? "モデル" : "Model"}
-          style={{ ...inputStyle, minWidth: 140 }}
-        />
-        <datalist id={`models-${provider}`}>
-          {PROVIDER_MODELS[provider].map((m) => (
-            <option key={m.id} value={m.id} label={m.label} />
-          ))}
-        </datalist>
-        <input
-          type="password"
-          placeholder="API Key"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          aria-label="API Key"
-          style={{ ...inputStyle, flex: 1, minWidth: 160 }}
-        />
-        {mode === "analyze" ? (
-          <SmallButton
-            onClick={analyze}
-            disabled={loading || !apiKey || !subject}
-            active
+        {/* Row 1: Provider + Model */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <select
+            value={provider}
+            onChange={(e) => {
+              const p = e.target.value;
+              setProvider(p);
+              if (p === "ollama" && ollamaModels.length) {
+                setModel(ollamaModels[0].id);
+              } else {
+                setModel(PROVIDER_MODELS[p][0].id);
+              }
+            }}
+            aria-label={lang === "ja" ? "AIプロバイダー" : "AI provider"}
+            style={{ ...inputStyle, cursor: "pointer" }}
           >
-            {loading
-              ? lang === "ja"
-                ? "分析中\u2026"
-                : "Analyzing\u2026"
-              : lang === "ja"
-                ? "分析する"
-                : "Analyze"}
-          </SmallButton>
+            <option value="ollama">Ollama / Local</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="gemini">Gemini</option>
+          </select>
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            aria-label={lang === "ja" ? "モデル" : "Model"}
+            style={{ ...inputStyle, flex: 1, cursor: "pointer" }}
+          >
+            {(isOllamaLike(provider) && ollamaModels.length
+              ? ollamaModels
+              : PROVIDER_MODELS[provider]
+            ).map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Row 2: Endpoint (Ollama) or API Key */}
+        {isOllamaLike(provider) ? (
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <span
+              style={{
+                fontSize: 10,
+                color: T.textMuted,
+                fontWeight: 600,
+                flexShrink: 0,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+              }}
+            >
+              URL
+            </span>
+            <input
+              type="text"
+              value={ollamaEndpoint}
+              onChange={(e) => setOllamaEndpoint(e.target.value)}
+              onBlur={() => fetchOllamaModels(ollamaEndpoint)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && fetchOllamaModels(ollamaEndpoint)
+              }
+              placeholder="http://localhost:11434"
+              aria-label="Endpoint URL"
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button
+              onClick={() => fetchOllamaModels(ollamaEndpoint)}
+              title={lang === "ja" ? "モデル再取得" : "Refresh models"}
+              style={{
+                background: "none",
+                border: `1px solid ${T.border}`,
+                borderRadius: 6,
+                padding: "5px 8px",
+                cursor: "pointer",
+                fontSize: 12,
+                lineHeight: 1,
+                color: T.textMuted,
+              }}
+            >
+              ↻
+            </button>
+            <span
+              title={
+                ollamaStatus === "connected"
+                  ? `${ollamaModels.length} ${lang === "ja" ? "モデル検出" : "models found"}`
+                  : ollamaStatus === "error"
+                    ? lang === "ja"
+                      ? "接続失敗"
+                      : "Connection failed"
+                    : ""
+              }
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                flexShrink: 0,
+                background:
+                  ollamaStatus === "connected"
+                    ? T.success
+                    : ollamaStatus === "error"
+                      ? T.danger
+                      : T.border,
+                transition: "background 0.2s",
+              }}
+            />
+          </div>
         ) : (
-          <SmallButton
-            onClick={generate}
-            disabled={genLoading || !apiKey || !genIntent}
-            active
-          >
-            {genLoading
-              ? lang === "ja"
-                ? "生成中\u2026"
-                : "Generating\u2026"
-              : lang === "ja"
-                ? "生成する"
-                : "Generate"}
-          </SmallButton>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <span
+              style={{
+                fontSize: 10,
+                color: T.textMuted,
+                fontWeight: 600,
+                flexShrink: 0,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+              }}
+            >
+              KEY
+            </span>
+            <input
+              type="password"
+              placeholder="API Key"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              aria-label="API Key"
+              style={{ ...inputStyle, flex: 1 }}
+            />
+          </div>
         )}
+
+        {/* Action button */}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          {mode === "analyze" ? (
+            <SmallButton
+              onClick={analyze}
+              disabled={
+                loading || (!apiKey && !isOllamaLike(provider)) || !subject
+              }
+              active
+            >
+              {loading
+                ? lang === "ja"
+                  ? "分析中\u2026"
+                  : "Analyzing\u2026"
+                : lang === "ja"
+                  ? "分析する"
+                  : "Analyze"}
+            </SmallButton>
+          ) : (
+            <SmallButton
+              onClick={generate}
+              disabled={
+                genLoading || (!apiKey && !isOllamaLike(provider)) || !genIntent
+              }
+              active
+            >
+              {genLoading
+                ? lang === "ja"
+                  ? "生成中\u2026"
+                  : "Generating\u2026"
+                : lang === "ja"
+                  ? "生成する"
+                  : "Generate"}
+            </SmallButton>
+          )}
+        </div>
       </div>
 
       {/* ── Analyze mode ── */}
@@ -539,13 +714,27 @@ Respond as JSON: {"variants":[{"subject":"...","preview":"...","rationale":"..."
                 background: T.dangerLight,
                 border: `1px solid ${T.dangerBorder}`,
                 borderRadius: T.radius,
-                padding: 10,
+                padding: 12,
                 fontSize: 12,
                 color: T.danger,
                 marginBottom: 12,
+                lineHeight: 1.6,
               }}
             >
-              {error}
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                {lang === "ja" ? "エラー" : "Error"}
+              </div>
+              <div>{error}</div>
+              {isOllamaLike(provider) &&
+                error.match(/fetch|network|refused|CORS/i) && (
+                  <div
+                    style={{ marginTop: 6, fontSize: 11, color: T.textMuted }}
+                  >
+                    {lang === "ja"
+                      ? "Ollamaが起動していない可能性があります。ターミナルで ollama serve を実行してください。"
+                      : "Ollama may not be running. Try running 'ollama serve' in your terminal."}
+                  </div>
+                )}
             </div>
           )}
           {loading && (
@@ -602,17 +791,58 @@ Respond as JSON: {"variants":[{"subject":"...","preview":"...","rationale":"..."
           {!result && !loading && !error && (
             <div
               style={{
-                padding: "24px 16px",
-                textAlign: "center",
+                padding: "20px 16px",
                 border: `1px dashed ${T.border}`,
                 borderRadius: T.radius,
                 color: T.textMuted,
                 fontSize: 12,
+                lineHeight: 1.8,
               }}
             >
-              {lang === "ja"
-                ? "APIキーを入力して分析を実行"
-                : "Enter API key to run analysis"}
+              <div
+                style={{
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  color: T.textSecondary,
+                }}
+              >
+                {lang === "ja" ? "使い方" : "How to use"}
+              </div>
+              {isOllamaLike(provider) ? (
+                <ol style={{ margin: 0, paddingLeft: 18 }}>
+                  <li>
+                    {lang === "ja"
+                      ? "Ollamaが起動中か確認（緑●）"
+                      : "Make sure Ollama is running (green dot)"}
+                  </li>
+                  <li>
+                    {lang === "ja"
+                      ? "左の入力欄に件名を入力"
+                      : "Enter a subject line in the sidebar"}
+                  </li>
+                  <li>
+                    {lang === "ja"
+                      ? "「分析する」をクリック"
+                      : 'Click "Analyze"'}
+                  </li>
+                </ol>
+              ) : (
+                <ol style={{ margin: 0, paddingLeft: 18 }}>
+                  <li>
+                    {lang === "ja" ? "APIキーを入力" : "Enter your API key"}
+                  </li>
+                  <li>
+                    {lang === "ja"
+                      ? "左の入力欄に件名を入力"
+                      : "Enter a subject line in the sidebar"}
+                  </li>
+                  <li>
+                    {lang === "ja"
+                      ? "「分析する」をクリック"
+                      : 'Click "Analyze"'}
+                  </li>
+                </ol>
+              )}
             </div>
           )}
 
@@ -905,17 +1135,30 @@ Respond as JSON: {"variants":[{"subject":"...","preview":"...","rationale":"..."
           {!genResult && !genLoading && !genError && (
             <div
               style={{
-                padding: "24px 16px",
-                textAlign: "center",
+                padding: "20px 16px",
                 border: `1px dashed ${T.border}`,
                 borderRadius: T.radius,
                 color: T.textMuted,
                 fontSize: 12,
+                lineHeight: 1.8,
               }}
             >
-              {lang === "ja"
-                ? "意図を入力してバリアントを生成"
-                : "Describe your intent and generate variants"}
+              <div
+                style={{
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  color: T.textSecondary,
+                }}
+              >
+                {lang === "ja"
+                  ? "件名バリアントを生成"
+                  : "Generate subject variants"}
+              </div>
+              <div>
+                {lang === "ja"
+                  ? "上のテキストエリアにキャンペーンの意図やキーワードを入力してください。AIが複数の件名・プレビューテキストを提案します。"
+                  : "Describe your campaign intent or keywords in the text area above. AI will suggest multiple subject line and preview text combinations."}
+              </div>
             </div>
           )}
 

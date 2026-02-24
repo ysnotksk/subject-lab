@@ -1,4 +1,10 @@
-export function MobileFrame({ type, screenType, dark, children }) {
+export function MobileFrame({
+  type,
+  screenType,
+  dark,
+  screenMaxHeight,
+  children,
+}) {
   const isIphone = type === "iphone";
   const bezelColor = dark ? "#000" : "#1a1a1a";
   const screenBg = dark ? "#1a1a1a" : "#f2f2f7";
@@ -73,10 +79,12 @@ export function MobileFrame({ type, screenType, dark, children }) {
 
       {/* Screen */}
       <div
+        className={screenMaxHeight ? "device-screen-scroll" : undefined}
         style={{
           background: screenBg,
           borderRadius: isIphone ? 28 : 14,
-          overflow: "hidden",
+          height: screenMaxHeight,
+          overflowY: screenMaxHeight ? "auto" : "hidden",
         }}
       >
         {children}

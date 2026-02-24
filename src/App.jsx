@@ -34,7 +34,10 @@ export default function SubjectLab() {
   );
   const [activeId, setActiveId] = useState(() => load("activeId", 1));
   const [highlight, setHighlight] = useState(() => load("highlight", false));
-  const [activeTab, setActiveTab] = useState(() => load("activeTab", "inbox"));
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = load("activeTab", "inbox");
+    return saved === "analysis" ? "inbox" : saved;
+  });
 
   useEffect(() => save("lang", lang), [lang]);
   useEffect(() => save("industry", industry), [industry]);
@@ -297,12 +300,6 @@ export default function SubjectLab() {
                 ja: "3秒テスト",
                 en: "3s Test",
               },
-              {
-                key: "analysis",
-                icon: "\u2696",
-                ja: "件名チェック",
-                en: "Analysis",
-              },
             ].map((t) => (
               <button
                 key={t.key}
@@ -310,10 +307,10 @@ export default function SubjectLab() {
                 className={`tab-btn${activeTab === t.key ? " tab-active" : ""}`}
                 style={{
                   flex: 1,
-                  padding: "7px 8px",
+                  padding: "8px 12px",
                   borderRadius: 6,
                   border: "none",
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: 500,
                   cursor: "pointer",
                   fontFamily: T.font,
@@ -330,17 +327,34 @@ export default function SubjectLab() {
 
           <Card style={{ padding: 20 }}>
             {activeTab === "inbox" && (
-              <InboxSimulator
-                sender={active.sender}
-                senderIcon={active.senderIcon}
-                subject={active.subject}
-                preview={active.preview}
-                lang={lang}
-                industry={industry}
-                highlight={highlight}
-                setHighlight={setHighlight}
-                exportRef={inboxRef}
-              />
+              <>
+                <InboxSimulator
+                  sender={active.sender}
+                  senderIcon={active.senderIcon}
+                  subject={active.subject}
+                  preview={active.preview}
+                  lang={lang}
+                  industry={industry}
+                  highlight={highlight}
+                  setHighlight={setHighlight}
+                  exportRef={inboxRef}
+                />
+                <div
+                  style={{
+                    marginTop: 20,
+                    paddingTop: 20,
+                    borderTop: `1px solid ${T.borderSubtle}`,
+                  }}
+                >
+                  <LinguisticAnalysis
+                    sender={active.sender}
+                    subject={active.subject}
+                    preview={active.preview}
+                    lang={lang}
+                    industry={industry}
+                  />
+                </div>
+              </>
             )}
             {activeTab === "device" && (
               <DevicePreview
@@ -363,15 +377,6 @@ export default function SubjectLab() {
             )}
             {activeTab === "findtest" && (
               <FindTest
-                sender={active.sender}
-                subject={active.subject}
-                preview={active.preview}
-                lang={lang}
-                industry={industry}
-              />
-            )}
-            {activeTab === "analysis" && (
-              <LinguisticAnalysis
                 sender={active.sender}
                 subject={active.subject}
                 preview={active.preview}

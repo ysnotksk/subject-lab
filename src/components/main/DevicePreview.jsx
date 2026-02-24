@@ -87,6 +87,8 @@ export default function DevicePreview({
 
   const [cardWidths, setCardWidths] = useState({});
   const cardRefs = useRef({});
+  const rafId = useRef(null);
+  const pendingWidths = useRef({});
 
   const setCardRef = useCallback((id, el) => {
     if (el) cardRefs.current[id] = el;
@@ -95,16 +97,29 @@ export default function DevicePreview({
   useEffect(() => {
     const entries = Object.entries(cardRefs.current);
     if (!entries.length) return;
+    const THRESHOLD = 8; // ignore width changes smaller than this
     const ro = new ResizeObserver((obs) => {
-      const next = {};
       for (const entry of obs) {
         const id = entry.target.dataset.deviceId;
-        if (id) next[id] = entry.contentRect.width;
+        if (id) pendingWidths.current[id] = Math.round(entry.contentRect.width);
       }
-      setCardWidths((prev) => ({ ...prev, ...next }));
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        const widths = pendingWidths.current;
+        pendingWidths.current = {};
+        setCardWidths((prev) => {
+          const changed = Object.keys(widths).some(
+            (k) => !prev[k] || Math.abs(prev[k] - widths[k]) >= THRESHOLD,
+          );
+          return changed ? { ...prev, ...widths } : prev;
+        });
+      });
     });
     for (const [, el] of entries) ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    };
   }, [activeDevices]);
 
   useEffect(() => save("activeDevices", activeDevices), [activeDevices]);
@@ -120,6 +135,449 @@ export default function DevicePreview({
   };
 
   const filtered = DEVICES.filter((d) => activeDevices.includes(d.id));
+  const filteredMobile = filtered.filter((d) => d.type === "mobile");
+  const filteredDesktop = filtered.filter((d) => d.type === "desktop");
+
+  const renderCard = (d) => {
+    // For responsive devices (Gmail Desktop), compute subMax from card width
+    let subMax = lang === "ja" ? d.subjectCharsJa : d.subjectCharsEn;
+    const isResponsive = !!d.chrome?.layoutAuto;
+    if (isResponsive && cardWidths[d.id]) {
+      const availW = cardWidths[d.id] - GMAIL_ROW_FIXED_W;
+      subMax = Math.max(10, Math.floor(availW / AVG_CHAR_W[lang]));
+    }
+    const isCut = (subject || "").length > subMax;
+    const truncPrev = truncate(
+      preview || "",
+      lang === "ja" ? d.previewCharsJa : d.previewCharsEn,
+    );
+    const truncSender = truncate(
+      sender || (lang === "ja" ? "送信者" : "Sender"),
+      d.senderChars,
+    );
+    const senderName = sender || (lang === "ja" ? "送信者" : "Sender");
+    const tokens = tokenizeSubject(subject || "", lang);
+    const analysis = analyzeTokenTruncation(tokens, subMax);
+    const ch = d.chrome || {};
+    const isUnreadBold = ch.unread === "bold";
+
+    return (
+      <div
+        key={d.id}
+        ref={(el) => setCardRef(d.id, el)}
+        data-device-id={d.id}
+        style={{
+          border: `1px solid ${T.border}`,
+          borderRadius: T.radius,
+          padding: 12,
+          background: T.bg,
+        }}
+      >
+        {/* Device label + CUT badge */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: T.textMuted,
+              letterSpacing: "0.03em",
+            }}
+          >
+            {d.type === "mobile" ? "\u25c9" : "\u25fb"} {d.name}
+          </span>
+          {isCut && (
+            <span
+              style={{
+                fontSize: 9,
+                background: T.dangerLight,
+                color: T.danger,
+                padding: "1px 5px",
+                borderRadius: 3,
+                fontWeight: 600,
+              }}
+            >
+              CUT
+            </span>
+          )}
+        </div>
+
+        {/* Email row mockup */}
+        <div
+          style={{
+            background: T.surface,
+            borderRadius: 6,
+            padding: ch.rowPadding || "8px 10px",
+            border: `1px solid ${T.borderSubtle}`,
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {/* Outlook unread bar */}
+          {ch.unread === "bar" && <UnreadIndicator style="bar" />}
+
+          {ch.layoutAuto ? (
+            /* Desktop horizontal single-row layout */
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: ch.contentGap || 8,
+              }}
+            >
+              {/* Chrome icons (checkbox/star/flag) */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  flexShrink: 0,
+                  color: T.textMuted,
+                  opacity: 0.5,
+                  fontSize: 11,
+                }}
+              >
+                {ch.checkbox && <span>{"☐"}</span>}
+                {ch.star && <span>{"☆"}</span>}
+                {ch.flag && <span>{"⚑"}</span>}
+              </div>
+
+              {/* Avatar (Outlook) */}
+              {ch.avatar &&
+                (senderIcon ? (
+                  <img
+                    src={senderIcon}
+                    alt=""
+                    style={{
+                      width: ch.avatarSize || 28,
+                      height: ch.avatarSize || 28,
+                      borderRadius: ch.avatarRadius || "50%",
+                      objectFit: "cover",
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: ch.avatarSize || 28,
+                      height: ch.avatarSize || 28,
+                      borderRadius: ch.avatarRadius || "50%",
+                      background: T.accent + "18",
+                      color: T.accent,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {senderName.charAt(0)}
+                  </div>
+                ))}
+
+              {/* Sender — fixed width */}
+              <div
+                style={{
+                  fontWeight: isUnreadBold ? 700 : 600,
+                  fontSize: ch.senderFont || 12,
+                  color: T.text,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  width: 130,
+                  flexShrink: 0,
+                }}
+              >
+                {truncSender}
+              </div>
+
+              {/* Subject + optional preview */}
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  fontSize: ch.subjectFont || 11,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  lineHeight: 1.4,
+                }}
+              >
+                {subject ? (
+                  <>
+                    {analysis.map((a, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          fontWeight:
+                            a.status === "partial"
+                              ? 700
+                              : isUnreadBold
+                                ? 600
+                                : 500,
+                          color:
+                            a.status === "visible"
+                              ? T.text
+                              : a.status === "partial"
+                                ? T.warning
+                                : T.textMuted,
+                          textDecoration:
+                            a.status === "cut" ? "line-through" : "none",
+                          background:
+                            a.status === "partial"
+                              ? T.warningLight
+                              : "transparent",
+                          borderRadius: a.status === "partial" ? 2 : 0,
+                          padding: a.status === "partial" ? "0 1px" : 0,
+                        }}
+                      >
+                        {a.token}
+                      </span>
+                    ))}
+                    {isCut && (
+                      <span style={{ color: T.danger, fontWeight: 700 }}>
+                        {"\u2026"}
+                      </span>
+                    )}
+                    {truncPrev && (
+                      <span style={{ color: T.textMuted, fontWeight: 400 }}>
+                        {" — "}
+                        {truncPrev}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span style={{ color: T.textMuted }}>
+                    {lang === "ja" ? "件名未入力" : "No subject"}
+                  </span>
+                )}
+              </div>
+
+              {/* Date */}
+              <span
+                style={{
+                  fontSize: 10,
+                  color: T.textMuted,
+                  flexShrink: 0,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                22 Feb
+              </span>
+            </div>
+          ) : (
+            /* Standard stacked layout — mobile clients + Mac Mail */
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: ch.contentGap || 8,
+                paddingLeft: ch.unread === "bar" ? 4 : 0,
+              }}
+            >
+              {/* Unread dot (iPhone Mail) */}
+              {ch.unread === "dot" && (
+                <div style={{ paddingTop: 5, flexShrink: 0 }}>
+                  <UnreadIndicator style="dot" />
+                </div>
+              )}
+
+              {/* Avatar */}
+              {ch.avatar && (
+                <div style={{ paddingTop: 1, flexShrink: 0 }}>
+                  {senderIcon ? (
+                    <img
+                      src={senderIcon}
+                      alt=""
+                      style={{
+                        width: ch.avatarSize || 24,
+                        height: ch.avatarSize || 24,
+                        borderRadius: ch.avatarRadius || "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <Avatar
+                      name={senderName}
+                      size={ch.avatarSize || 24}
+                      radius={ch.avatarRadius || "50%"}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Sender row with time */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 4,
+                    marginBottom: 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: isUnreadBold ? 700 : 600,
+                      fontSize: ch.senderFont || 11,
+                      color: T.text,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {truncSender}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 9,
+                        color: T.textMuted,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      9:41
+                    </span>
+                    {ch.chevron && (
+                      <span style={{ fontSize: 10, color: T.textMuted }}>
+                        {"\u203a"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Subject with truncation analysis */}
+                <div
+                  style={{
+                    fontSize: ch.subjectFont || 11,
+                    fontWeight: isUnreadBold ? 600 : 500,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {ch.subjectIcon && (
+                    <span
+                      style={{
+                        fontSize: (ch.subjectFont || 11) - 1,
+                        marginRight: 3,
+                        opacity: 0.6,
+                      }}
+                    >
+                      {ch.subjectIcon}
+                    </span>
+                  )}
+                  {subject ? (
+                    analysis.map((a, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          color:
+                            a.status === "visible"
+                              ? T.text
+                              : a.status === "partial"
+                                ? T.warning
+                                : T.textMuted,
+                          textDecoration:
+                            a.status === "cut" ? "line-through" : "none",
+                          fontWeight: a.status === "partial" ? 700 : undefined,
+                          background:
+                            a.status === "partial"
+                              ? T.warningLight
+                              : "transparent",
+                          borderRadius: a.status === "partial" ? 2 : 0,
+                          padding: a.status === "partial" ? "0 1px" : 0,
+                        }}
+                      >
+                        {a.token}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ color: T.textMuted }}>
+                      {lang === "ja" ? "件名未入力" : "No subject"}
+                    </span>
+                  )}
+                  {isCut && (
+                    <span style={{ color: T.danger, fontWeight: 700 }}>
+                      {"\u2026"}
+                    </span>
+                  )}
+                </div>
+
+                {/* Preview text */}
+                {truncPrev && (
+                  <div
+                    style={{
+                      fontSize: ch.previewFont || 10,
+                      color: T.textMuted,
+                      marginTop: 1,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {truncPrev}
+                  </div>
+                )}
+              </div>
+
+              {/* Star / Flag — aligned to top of sender row */}
+              {(ch.star || ch.flag) && (
+                <div
+                  style={{
+                    flexShrink: 0,
+                    alignSelf: "flex-start",
+                    paddingTop: 1,
+                    lineHeight: 1,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: T.textMuted,
+                      opacity: 0.4,
+                    }}
+                  >
+                    {ch.flag ? "\u2691" : "\u2606"}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Character count */}
+        <div
+          style={{
+            marginTop: 4,
+            fontSize: 10,
+            color: T.textMuted,
+            textAlign: "right",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {(subject || "").length}/{subMax}
+          {isResponsive && (
+            <span style={{ fontSize: 9, marginLeft: 4, opacity: 0.6 }}>↔</span>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -165,457 +623,30 @@ export default function DevicePreview({
 
       <div
         ref={exportRef}
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(auto-fit, minmax(${filtered.length <= 2 ? "280px" : "210px"}, 1fr))`,
-          gap: 12,
-        }}
+        style={{ display: "flex", flexDirection: "column", gap: 12 }}
       >
-        {filtered.map((d) => {
-          // For responsive devices (Gmail Desktop), compute subMax from card width
-          let subMax = lang === "ja" ? d.subjectCharsJa : d.subjectCharsEn;
-          const isResponsive = !!d.chrome?.layoutAuto;
-          if (isResponsive && cardWidths[d.id]) {
-            const availW = cardWidths[d.id] - GMAIL_ROW_FIXED_W;
-            subMax = Math.max(10, Math.floor(availW / AVG_CHAR_W[lang]));
-          }
-          const isCut = (subject || "").length > subMax;
-          const truncPrev = truncate(
-            preview || "",
-            lang === "ja" ? d.previewCharsJa : d.previewCharsEn,
-          );
-          const truncSender = truncate(
-            sender || (lang === "ja" ? "送信者" : "Sender"),
-            d.senderChars,
-          );
-          const senderName = sender || (lang === "ja" ? "送信者" : "Sender");
-          const tokens = tokenizeSubject(subject || "", lang);
-          const analysis = analyzeTokenTruncation(tokens, subMax);
-          const ch = d.chrome || {};
-          const isUnreadBold = ch.unread === "bold";
+        {/* Mobile: max 3 cols */}
+        {filteredMobile.length > 0 && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(max(180px, calc(33.333% - 8px)), 1fr))",
+              gap: 12,
+            }}
+          >
+            {filteredMobile.map(renderCard)}
+          </div>
+        )}
 
-          return (
-            <div
-              key={d.id}
-              ref={(el) => setCardRef(d.id, el)}
-              data-device-id={d.id}
-              style={{
-                border: `1px solid ${T.border}`,
-                borderRadius: T.radius,
-                padding: 12,
-                background: T.bg,
-              }}
-            >
-              {/* Device label + CUT badge */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: T.textMuted,
-                    letterSpacing: "0.03em",
-                  }}
-                >
-                  {d.type === "mobile" ? "\u25c9" : "\u25fb"} {d.name}
-                </span>
-                {isCut && (
-                  <span
-                    style={{
-                      fontSize: 9,
-                      background: T.dangerLight,
-                      color: T.danger,
-                      padding: "1px 5px",
-                      borderRadius: 3,
-                      fontWeight: 600,
-                    }}
-                  >
-                    CUT
-                  </span>
-                )}
-              </div>
-
-              {/* Email row mockup */}
-              <div
-                style={{
-                  background: T.surface,
-                  borderRadius: 6,
-                  padding: ch.rowPadding || "8px 10px",
-                  border: `1px solid ${T.borderSubtle}`,
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                {/* Outlook unread bar */}
-                {ch.unread === "bar" && <UnreadIndicator style="bar" />}
-
-                {ch.layoutAuto ? (
-                  /* Desktop horizontal single-row layout */
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: ch.contentGap || 8,
-                    }}
-                  >
-                    {/* Chrome icons (checkbox/star/flag) */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        flexShrink: 0,
-                        color: T.textMuted,
-                        opacity: 0.5,
-                        fontSize: 11,
-                      }}
-                    >
-                      {ch.checkbox && <span>{"☐"}</span>}
-                      {ch.star && <span>{"☆"}</span>}
-                      {ch.flag && <span>{"⚑"}</span>}
-                    </div>
-
-                    {/* Avatar (Outlook) */}
-                    {ch.avatar &&
-                      (senderIcon ? (
-                        <img
-                          src={senderIcon}
-                          alt=""
-                          style={{
-                            width: ch.avatarSize || 28,
-                            height: ch.avatarSize || 28,
-                            borderRadius: ch.avatarRadius || "50%",
-                            objectFit: "cover",
-                            flexShrink: 0,
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: ch.avatarSize || 28,
-                            height: ch.avatarSize || 28,
-                            borderRadius: ch.avatarRadius || "50%",
-                            background: T.accent + "18",
-                            color: T.accent,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {senderName.charAt(0)}
-                        </div>
-                      ))}
-
-                    {/* Sender — fixed width */}
-                    <div
-                      style={{
-                        fontWeight: isUnreadBold ? 700 : 600,
-                        fontSize: ch.senderFont || 12,
-                        color: T.text,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        width: 130,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {truncSender}
-                    </div>
-
-                    {/* Subject + optional preview */}
-                    <div
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        fontSize: ch.subjectFont || 11,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {subject ? (
-                        <>
-                          {analysis.map((a, i) => (
-                            <span
-                              key={i}
-                              style={{
-                                fontWeight:
-                                  a.status === "partial"
-                                    ? 700
-                                    : isUnreadBold
-                                      ? 600
-                                      : 500,
-                                color:
-                                  a.status === "visible"
-                                    ? T.text
-                                    : a.status === "partial"
-                                      ? T.warning
-                                      : T.textMuted,
-                                textDecoration:
-                                  a.status === "cut" ? "line-through" : "none",
-                                background:
-                                  a.status === "partial"
-                                    ? T.warningLight
-                                    : "transparent",
-                                borderRadius: a.status === "partial" ? 2 : 0,
-                                padding: a.status === "partial" ? "0 1px" : 0,
-                              }}
-                            >
-                              {a.token}
-                            </span>
-                          ))}
-                          {isCut && (
-                            <span style={{ color: T.danger, fontWeight: 700 }}>
-                              {"\u2026"}
-                            </span>
-                          )}
-                          {truncPrev && (
-                            <span
-                              style={{ color: T.textMuted, fontWeight: 400 }}
-                            >
-                              {" — "}
-                              {truncPrev}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span style={{ color: T.textMuted }}>
-                          {lang === "ja" ? "件名未入力" : "No subject"}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Date */}
-                    <span
-                      style={{
-                        fontSize: 10,
-                        color: T.textMuted,
-                        flexShrink: 0,
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      22 Feb
-                    </span>
-                  </div>
-                ) : (
-                  /* Standard stacked layout — mobile clients + Outlook */
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: ch.contentGap || 8,
-                      paddingLeft: ch.unread === "bar" ? 4 : 0,
-                    }}
-                  >
-                    {/* Unread dot (iPhone Mail) */}
-                    {ch.unread === "dot" && (
-                      <div style={{ paddingTop: 5, flexShrink: 0 }}>
-                        <UnreadIndicator style="dot" />
-                      </div>
-                    )}
-
-                    {/* Avatar */}
-                    {ch.avatar && (
-                      <div style={{ paddingTop: 1, flexShrink: 0 }}>
-                        {senderIcon ? (
-                          <img
-                            src={senderIcon}
-                            alt=""
-                            style={{
-                              width: ch.avatarSize || 24,
-                              height: ch.avatarSize || 24,
-                              borderRadius: ch.avatarRadius || "50%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : (
-                          <Avatar
-                            name={senderName}
-                            size={ch.avatarSize || 24}
-                            radius={ch.avatarRadius || "50%"}
-                          />
-                        )}
-                      </div>
-                    )}
-
-                    {/* Content */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      {/* Sender row with time */}
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 4,
-                          marginBottom: 1,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontWeight: isUnreadBold ? 700 : 600,
-                            fontSize: ch.senderFont || 11,
-                            color: T.text,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {truncSender}
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            flexShrink: 0,
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: 9,
-                              color: T.textMuted,
-                              fontVariantNumeric: "tabular-nums",
-                            }}
-                          >
-                            9:41
-                          </span>
-                          {ch.chevron && (
-                            <span style={{ fontSize: 10, color: T.textMuted }}>
-                              {"\u203a"}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Subject with truncation analysis */}
-                      <div
-                        style={{
-                          fontSize: ch.subjectFont || 11,
-                          fontWeight: isUnreadBold ? 600 : 500,
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        {ch.subjectIcon && (
-                          <span
-                            style={{
-                              fontSize: (ch.subjectFont || 11) - 1,
-                              marginRight: 3,
-                              opacity: 0.6,
-                            }}
-                          >
-                            {ch.subjectIcon}
-                          </span>
-                        )}
-                        {subject ? (
-                          analysis.map((a, i) => (
-                            <span
-                              key={i}
-                              style={{
-                                color:
-                                  a.status === "visible"
-                                    ? T.text
-                                    : a.status === "partial"
-                                      ? T.warning
-                                      : T.textMuted,
-                                textDecoration:
-                                  a.status === "cut" ? "line-through" : "none",
-                                fontWeight:
-                                  a.status === "partial" ? 700 : undefined,
-                                background:
-                                  a.status === "partial"
-                                    ? T.warningLight
-                                    : "transparent",
-                                borderRadius: a.status === "partial" ? 2 : 0,
-                                padding: a.status === "partial" ? "0 1px" : 0,
-                              }}
-                            >
-                              {a.token}
-                            </span>
-                          ))
-                        ) : (
-                          <span style={{ color: T.textMuted }}>
-                            {lang === "ja" ? "件名未入力" : "No subject"}
-                          </span>
-                        )}
-                        {isCut && (
-                          <span style={{ color: T.danger, fontWeight: 700 }}>
-                            {"\u2026"}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Preview text */}
-                      {truncPrev && (
-                        <div
-                          style={{
-                            fontSize: ch.previewFont || 10,
-                            color: T.textMuted,
-                            marginTop: 1,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {truncPrev}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Star / Flag — aligned to top of sender row */}
-                    {(ch.star || ch.flag) && (
-                      <div
-                        style={{
-                          flexShrink: 0,
-                          alignSelf: "flex-start",
-                          paddingTop: 1,
-                          lineHeight: 1,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: 13,
-                            color: T.textMuted,
-                            opacity: 0.4,
-                          }}
-                        >
-                          {ch.flag ? "\u2691" : "\u2606"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Character count */}
-              <div
-                style={{
-                  marginTop: 4,
-                  fontSize: 10,
-                  color: T.textMuted,
-                  textAlign: "right",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {(subject || "").length}/{subMax}
-                {isResponsive && (
-                  <span style={{ fontSize: 9, marginLeft: 4, opacity: 0.6 }}>
-                    ↔
-                  </span>
-                )}
-              </div>
+        {/* Desktop: 2-col width, left-aligned */}
+        {filteredDesktop.length > 0 && (
+          <div style={{ maxWidth: "calc(66.667% - 4px)" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {filteredDesktop.map(renderCard)}
             </div>
-          );
-        })}
+          </div>
+        )}
       </div>
 
       {subject &&
