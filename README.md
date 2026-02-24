@@ -8,10 +8,6 @@
 
 **[Try it live → ysnotksk.github.io/subject-lab](https://ysnotksk.github.io/subject-lab/)**
 
-<p align="center">
-  <img src="docs/images/screenshot.png" alt="SubjectLab screenshot" width="800" />
-</p>
-
 ---
 
 <!-- ═══════════════════════════════════════════════════════ -->
@@ -43,7 +39,7 @@ SubjectLab is a visual testing tool for email subject lines. Instead of scoring 
 | **Sender Icon Upload** | Upload an avatar image for your sender |
 | **Dark Mode** | Inbox simulator dark / light toggle |
 | **Image Export** | PNG download or clipboard copy for sharing |
-| **AI Analysis** | Optional: OpenAI / Anthropic / Gemini (BYOK) |
+| **AI Analysis** | Optional: Ollama (local) / OpenAI / Anthropic / Gemini (BYOK) |
 | **AI Export** | PNG image or Markdown download of analysis results |
 | **Bilingual** | Full Japanese / English, switchable in real time |
 | **Pre-send Checklist** | 7 items covering truncation, syntagmatic integrity, and paradigmatic contrast |
@@ -79,7 +75,7 @@ SubjectLabはメール件名の視覚テストツールです。件名にスコ�
 | **送信者アイコンアップロード** | 送信者のアバター画像をアップロード |
 | **ダークモード** | 受信トレイシミュレーターのダーク/ライト切替 |
 | **画像エクスポート** | PNGダウンロードまたはクリップボードコピーで共有 |
-| **AI分析** | オプション：OpenAI / Anthropic / Gemini（BYOK） |
+| **AI分析** | オプション：Ollama（ローカル） / OpenAI / Anthropic / Gemini（BYOK） |
 | **AIエクスポート** | 分析結果のPNG画像またはMarkdownダウンロード |
 | **バイリンガル** | 日本語/英語の完全対応、リアルタイム切替 |
 | **送信前チェックリスト** | 切り詰め・連辞的整合性・範列的対比をカバーする7項目 |
