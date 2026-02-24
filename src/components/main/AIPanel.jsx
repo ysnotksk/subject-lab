@@ -33,6 +33,9 @@ export default function AIPanel({
   lang,
   candidates,
   industry,
+  updateActive,
+  addCandidateFrom,
+  candidatesCount,
 }) {
   const [apiKey, setApiKey] = useState("");
   const [provider, setProvider] = useState("openai");
@@ -45,6 +48,12 @@ export default function AIPanel({
   const [customPrompt, setCustomPrompt] = useState(() =>
     load("customPrompt", null),
   );
+  const [mode, setMode] = useState("analyze");
+  const [genIntent, setGenIntent] = useState("");
+  const [genCount, setGenCount] = useState(5);
+  const [genResult, setGenResult] = useState(null);
+  const [genLoading, setGenLoading] = useState(false);
+  const [genError, setGenError] = useState(null);
 
   const resultRef = useRef(null);
 
@@ -203,6 +212,107 @@ export default function AIPanel({
     }
   };
 
+  const buildGenPrompt = () => {
+    const langLabel = lang === "ja" ? "Japanese" : "English";
+    const industryLabel = INDUSTRY_EMAILS[industry]?.label[lang];
+    return `Expert email copywriter. Language: ${langLabel}. Industry: ${industryLabel}. Sender: "${sender}".
+User intent: "${genIntent}".
+Competing subjects in this inbox:
+${dummySubs.join("\n")}
+Generate ${genCount} distinct subject + preview text pairs with different angles.
+Respond as JSON: {"variants":[{"subject":"...","preview":"...","rationale":"..."}]}`;
+  };
+
+  const generate = async () => {
+    if (!apiKey || !genIntent) return;
+    setGenLoading(true);
+    setGenError(null);
+    setGenResult(null);
+    const promptText = buildGenPrompt();
+    try {
+      let data;
+      if (provider === "openai") {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: promptText }],
+            temperature: 0.9,
+            response_format: { type: "json_object" },
+          }),
+        });
+        data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        setGenResult(JSON.parse(data.choices[0].message.content));
+      } else if (provider === "anthropic") {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 2000,
+            messages: [
+              {
+                role: "user",
+                content: promptText + "\nRespond ONLY with valid JSON.",
+              },
+            ],
+          }),
+        });
+        data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        setGenResult(
+          JSON.parse(
+            data.content[0].text.replace(/```json\n?|```\n?/g, "").trim(),
+          ),
+        );
+      } else {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    { text: promptText + "\nRespond ONLY with valid JSON." },
+                  ],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.9,
+                responseMimeType: "application/json",
+              },
+            }),
+          },
+        );
+        data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+        setGenResult(
+          JSON.parse(
+            data.candidates[0].content.parts[0].text
+              .replace(/```json\n?|```\n?/g, "")
+              .trim(),
+          ),
+        );
+      }
+    } catch (e) {
+      setGenError(e.message);
+    } finally {
+      setGenLoading(false);
+    }
+  };
+
   const inputStyle = {
     padding: "7px 10px",
     borderRadius: 6,
@@ -216,7 +326,48 @@ export default function AIPanel({
 
   return (
     <div>
-      <SectionHeader title={lang === "ja" ? "AI 分析" : "AI Analysis"} />
+      <SectionHeader title={lang === "ja" ? "AI" : "AI"} />
+
+      {/* Mode toggle */}
+      <div
+        style={{
+          display: "flex",
+          gap: 2,
+          marginBottom: 14,
+          background: T.bg,
+          borderRadius: 8,
+          padding: 3,
+          border: `1px solid ${T.border}`,
+        }}
+      >
+        {[
+          { key: "analyze", label: lang === "ja" ? "分析" : "Analyze" },
+          { key: "generate", label: lang === "ja" ? "生成" : "Generate" },
+        ].map((m) => (
+          <button
+            key={m.key}
+            onClick={() => setMode(m.key)}
+            style={{
+              flex: 1,
+              padding: "5px 10px",
+              borderRadius: 6,
+              border: "none",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              fontFamily: T.font,
+              background: mode === m.key ? T.surface : "transparent",
+              color: mode === m.key ? T.text : T.textMuted,
+              boxShadow: mode === m.key ? T.shadow : "none",
+              transition: "all 0.15s",
+            }}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Shared config row */}
       <div
         style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}
       >
@@ -255,315 +406,529 @@ export default function AIPanel({
           aria-label="API Key"
           style={{ ...inputStyle, flex: 1, minWidth: 160 }}
         />
-        <SmallButton
-          onClick={analyze}
-          disabled={loading || !apiKey || !subject}
-          active
-        >
-          {loading
-            ? lang === "ja"
-              ? "分析中\u2026"
-              : "Analyzing\u2026"
-            : lang === "ja"
-              ? "分析する"
-              : "Analyze"}
-        </SmallButton>
-      </div>
-
-      <div style={{ marginBottom: 12 }}>
-        <button
-          onClick={() => setShowPrompt(!showPrompt)}
-          style={{
-            background: "none",
-            border: "none",
-            fontSize: 11,
-            fontWeight: 500,
-            color: T.textMuted,
-            cursor: "pointer",
-            padding: "4px 0",
-            fontFamily: T.font,
-          }}
-        >
-          {showPrompt
-            ? lang === "ja"
-              ? "\u25bc プロンプトを隠す"
-              : "\u25bc Hide prompt"
-            : lang === "ja"
-              ? "\u25b6 プロンプトを表示"
-              : "\u25b6 Show prompt"}
-        </button>
-        {showPrompt && (
-          <div style={{ marginTop: 6 }}>
-            <div
-              style={{
-                display: "flex",
-                gap: 6,
-                marginBottom: 6,
-                alignItems: "center",
-              }}
-            >
-              <SmallButton
-                onClick={() => setEditingPrompt(!editingPrompt)}
-                active={editingPrompt}
-                style={{ padding: "3px 8px", fontSize: 10 }}
-              >
-                {editingPrompt
-                  ? lang === "ja"
-                    ? "読み取り専用"
-                    : "Read-only"
-                  : lang === "ja"
-                    ? "編集"
-                    : "Edit"}
-              </SmallButton>
-              {customPrompt !== null && (
-                <SmallButton
-                  onClick={() => {
-                    setCustomPrompt(null);
-                    setEditingPrompt(false);
-                  }}
-                  style={{ padding: "3px 8px", fontSize: 10 }}
-                >
-                  {lang === "ja" ? "リセット" : "Reset"}
-                </SmallButton>
-              )}
-              {customPrompt !== null && (
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: T.accent,
-                    fontWeight: 500,
-                  }}
-                >
-                  {lang === "ja" ? "カスタム" : "Custom"}
-                </span>
-              )}
-            </div>
-            <textarea
-              readOnly={!editingPrompt}
-              value={customPrompt || buildPrompt()}
-              onChange={(e) => setCustomPrompt(e.target.value)}
-              style={{
-                width: "100%",
-                minHeight: 120,
-                maxHeight: 240,
-                padding: 10,
-                borderRadius: T.radius,
-                border: `1px solid ${editingPrompt ? T.accent : T.border}`,
-                fontSize: 11,
-                fontFamily: "monospace",
-                lineHeight: 1.5,
-                background: editingPrompt ? T.surface : T.bg,
-                color: T.text,
-                resize: "vertical",
-                boxSizing: "border-box",
-                transition: "border-color 0.15s",
-              }}
-            />
-          </div>
+        {mode === "analyze" ? (
+          <SmallButton
+            onClick={analyze}
+            disabled={loading || !apiKey || !subject}
+            active
+          >
+            {loading
+              ? lang === "ja"
+                ? "分析中\u2026"
+                : "Analyzing\u2026"
+              : lang === "ja"
+                ? "分析する"
+                : "Analyze"}
+          </SmallButton>
+        ) : (
+          <SmallButton
+            onClick={generate}
+            disabled={genLoading || !apiKey || !genIntent}
+            active
+          >
+            {genLoading
+              ? lang === "ja"
+                ? "生成中\u2026"
+                : "Generating\u2026"
+              : lang === "ja"
+                ? "生成する"
+                : "Generate"}
+          </SmallButton>
         )}
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: T.dangerLight,
-            border: `1px solid ${T.dangerBorder}`,
-            borderRadius: T.radius,
-            padding: 10,
-            fontSize: 12,
-            color: T.danger,
-            marginBottom: 12,
-          }}
-        >
-          {error}
-        </div>
-      )}
-      {loading && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              style={{
-                padding: 16,
-                background: T.bg,
-                borderRadius: T.radius,
-                border: `1px solid ${T.borderSubtle}`,
-              }}
-            >
-              <div
-                style={{
-                  height: 10,
-                  width: 80,
-                  background: T.border,
-                  borderRadius: 4,
-                  marginBottom: 8,
-                  animation: "pulse 1.5s ease-in-out infinite",
-                }}
-              />
-              <div
-                style={{
-                  height: 12,
-                  width: "90%",
-                  background: T.borderSubtle,
-                  borderRadius: 4,
-                  marginBottom: 4,
-                  animation: "pulse 1.5s ease-in-out 0.2s infinite",
-                }}
-              />
-              <div
-                style={{
-                  height: 12,
-                  width: "70%",
-                  background: T.borderSubtle,
-                  borderRadius: 4,
-                  animation: "pulse 1.5s ease-in-out 0.4s infinite",
-                }}
-              />
-            </div>
-          ))}
-          <style
-            dangerouslySetInnerHTML={{
-              __html:
-                "@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }",
-            }}
-          />
-        </div>
-      )}
-      {!result && !loading && !error && (
-        <div
-          style={{
-            padding: "24px 16px",
-            textAlign: "center",
-            border: `1px dashed ${T.border}`,
-            borderRadius: T.radius,
-            color: T.textMuted,
-            fontSize: 12,
-          }}
-        >
-          {lang === "ja"
-            ? "APIキーを入力して分析を実行"
-            : "Enter API key to run analysis"}
-        </div>
-      )}
-
-      {result && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div
-            style={{
-              display: "flex",
-              gap: 4,
-              alignItems: "center",
-              justifyContent: "flex-end",
-            }}
-          >
-            <ExportButtons
-              targetRef={resultRef}
-              filename="ai-analysis"
-              lang={lang}
-            />
+      {/* ── Analyze mode ── */}
+      {mode === "analyze" && (
+        <>
+          <div style={{ marginBottom: 12 }}>
             <button
-              onClick={exportMarkdown}
-              title={
-                lang === "ja" ? "Markdownダウンロード" : "Download Markdown"
-              }
+              onClick={() => setShowPrompt(!showPrompt)}
               style={{
                 background: "none",
                 border: "none",
+                fontSize: 11,
+                fontWeight: 500,
                 color: T.textMuted,
                 cursor: "pointer",
-                fontSize: 11,
-                padding: "4px 6px",
-                borderRadius: 4,
+                padding: "4px 0",
                 fontFamily: T.font,
-                fontWeight: 500,
-                transition: "color 0.15s",
               }}
-              onMouseEnter={(e) => (e.target.style.color = T.accent)}
-              onMouseLeave={(e) => (e.target.style.color = T.textMuted)}
             >
-              .md
+              {showPrompt
+                ? lang === "ja"
+                  ? "\u25bc プロンプトを隠す"
+                  : "\u25bc Hide prompt"
+                : lang === "ja"
+                  ? "\u25b6 プロンプトを表示"
+                  : "\u25b6 Show prompt"}
             </button>
-          </div>
-          <div
-            ref={resultRef}
-            style={{ display: "flex", flexDirection: "column", gap: 10 }}
-          >
-            {[
-              {
-                label: lang === "ja" ? "切れ位置" : "Truncation",
-                content: result.truncation_advice,
-              },
-              {
-                label: lang === "ja" ? "差別化" : "Differentiation",
-                content: result.differentiation_advice,
-              },
-              {
-                label: lang === "ja" ? "プレビュー連携" : "Preview synergy",
-                content: result.preview_text_advice,
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                style={{
-                  padding: 14,
-                  background: T.bg,
-                  borderRadius: T.radius,
-                  border: `1px solid ${T.borderSubtle}`,
-                }}
-              >
+            {showPrompt && (
+              <div style={{ marginTop: 6 }}>
                 <div
                   style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: T.accent,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.06em",
+                    display: "flex",
+                    gap: 6,
                     marginBottom: 6,
+                    alignItems: "center",
                   }}
                 >
-                  {item.label}
+                  <SmallButton
+                    onClick={() => setEditingPrompt(!editingPrompt)}
+                    active={editingPrompt}
+                    style={{ padding: "3px 8px", fontSize: 10 }}
+                  >
+                    {editingPrompt
+                      ? lang === "ja"
+                        ? "読み取り専用"
+                        : "Read-only"
+                      : lang === "ja"
+                        ? "編集"
+                        : "Edit"}
+                  </SmallButton>
+                  {customPrompt !== null && (
+                    <SmallButton
+                      onClick={() => {
+                        setCustomPrompt(null);
+                        setEditingPrompt(false);
+                      }}
+                      style={{ padding: "3px 8px", fontSize: 10 }}
+                    >
+                      {lang === "ja" ? "リセット" : "Reset"}
+                    </SmallButton>
+                  )}
+                  {customPrompt !== null && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: T.accent,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {lang === "ja" ? "カスタム" : "Custom"}
+                    </span>
+                  )}
                 </div>
-                <div
+                <textarea
+                  readOnly={!editingPrompt}
+                  value={customPrompt || buildPrompt()}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
                   style={{
-                    fontSize: 13,
-                    color: T.textSecondary,
-                    lineHeight: 1.65,
+                    width: "100%",
+                    minHeight: 120,
+                    maxHeight: 240,
+                    padding: 10,
+                    borderRadius: T.radius,
+                    border: `1px solid ${editingPrompt ? T.accent : T.border}`,
+                    fontSize: 11,
+                    fontFamily: "monospace",
+                    lineHeight: 1.5,
+                    background: editingPrompt ? T.surface : T.bg,
+                    color: T.text,
+                    resize: "vertical",
+                    boxSizing: "border-box",
+                    transition: "border-color 0.15s",
                   }}
-                >
-                  {item.content}
-                </div>
+                />
               </div>
-            ))}
+            )}
+          </div>
+
+          {error && (
             <div
               style={{
-                padding: 14,
-                background: T.accentLight,
+                background: T.dangerLight,
+                border: `1px solid ${T.dangerBorder}`,
                 borderRadius: T.radius,
-                border: `1px solid ${T.accentBorder}`,
+                padding: 10,
+                fontSize: 12,
+                color: T.danger,
+                marginBottom: 12,
               }}
             >
+              {error}
+            </div>
+          )}
+          {loading && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  style={{
+                    padding: 16,
+                    background: T.bg,
+                    borderRadius: T.radius,
+                    border: `1px solid ${T.borderSubtle}`,
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 10,
+                      width: 80,
+                      background: T.border,
+                      borderRadius: 4,
+                      marginBottom: 8,
+                      animation: "pulse 1.5s ease-in-out infinite",
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 12,
+                      width: "90%",
+                      background: T.borderSubtle,
+                      borderRadius: 4,
+                      marginBottom: 4,
+                      animation: "pulse 1.5s ease-in-out 0.2s infinite",
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 12,
+                      width: "70%",
+                      background: T.borderSubtle,
+                      borderRadius: 4,
+                      animation: "pulse 1.5s ease-in-out 0.4s infinite",
+                    }}
+                  />
+                </div>
+              ))}
+              <style
+                dangerouslySetInnerHTML={{
+                  __html:
+                    "@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }",
+                }}
+              />
+            </div>
+          )}
+          {!result && !loading && !error && (
+            <div
+              style={{
+                padding: "24px 16px",
+                textAlign: "center",
+                border: `1px dashed ${T.border}`,
+                borderRadius: T.radius,
+                color: T.textMuted,
+                fontSize: 12,
+              }}
+            >
+              {lang === "ja"
+                ? "APIキーを入力して分析を実行"
+                : "Enter API key to run analysis"}
+            </div>
+          )}
+
+          {result && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div
                 style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  color: T.accentDark,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  marginBottom: 10,
+                  display: "flex",
+                  gap: 4,
+                  alignItems: "center",
+                  justifyContent: "flex-end",
                 }}
               >
-                {lang === "ja" ? "代替案" : "Alternatives"}
+                <ExportButtons
+                  targetRef={resultRef}
+                  filename="ai-analysis"
+                  lang={lang}
+                />
+                <button
+                  onClick={exportMarkdown}
+                  title={
+                    lang === "ja" ? "Markdownダウンロード" : "Download Markdown"
+                  }
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: T.textMuted,
+                    cursor: "pointer",
+                    fontSize: 11,
+                    padding: "4px 6px",
+                    borderRadius: 4,
+                    fontFamily: T.font,
+                    fontWeight: 500,
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.color = T.accent)}
+                  onMouseLeave={(e) => (e.target.style.color = T.textMuted)}
+                >
+                  .md
+                </button>
               </div>
-              {(result.alternatives || []).map((alt, i) => (
+              <div
+                ref={resultRef}
+                style={{ display: "flex", flexDirection: "column", gap: 10 }}
+              >
+                {[
+                  {
+                    label: lang === "ja" ? "切れ位置" : "Truncation",
+                    content: result.truncation_advice,
+                  },
+                  {
+                    label: lang === "ja" ? "差別化" : "Differentiation",
+                    content: result.differentiation_advice,
+                  },
+                  {
+                    label: lang === "ja" ? "プレビュー連携" : "Preview synergy",
+                    content: result.preview_text_advice,
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: 14,
+                      background: T.bg,
+                      borderRadius: T.radius,
+                      border: `1px solid ${T.borderSubtle}`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: T.accent,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        marginBottom: 6,
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: T.textSecondary,
+                        lineHeight: 1.65,
+                      }}
+                    >
+                      {item.content}
+                    </div>
+                  </div>
+                ))}
+                <div
+                  style={{
+                    padding: 14,
+                    background: T.accentLight,
+                    borderRadius: T.radius,
+                    border: `1px solid ${T.accentBorder}`,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: T.accentDark,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      marginBottom: 10,
+                    }}
+                  >
+                    {lang === "ja" ? "代替案" : "Alternatives"}
+                  </div>
+                  {(result.alternatives || []).map((alt, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: T.surface,
+                        borderRadius: 6,
+                        padding: 12,
+                        marginBottom:
+                          i < (result.alternatives || []).length - 1 ? 8 : 0,
+                        border: `1px solid ${T.successBorder}`,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 13,
+                          color: T.text,
+                          marginBottom: 4,
+                        }}
+                      >
+                        "{alt.subject}"
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: T.textSecondary,
+                          marginBottom: 3,
+                        }}
+                      >
+                        {alt.rationale}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: T.accent,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {alt.best_for}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Generate mode ── */}
+      {mode === "generate" && (
+        <div>
+          <textarea
+            value={genIntent}
+            onChange={(e) => setGenIntent(e.target.value)}
+            placeholder={
+              lang === "ja"
+                ? "例: ブラックフライデーセール、緊急感、20%オフ"
+                : "e.g. Black Friday flash sale, urgency focus, 20% off"
+            }
+            aria-label={lang === "ja" ? "生成意図" : "Generation intent"}
+            style={{
+              width: "100%",
+              minHeight: 72,
+              padding: 10,
+              borderRadius: T.radius,
+              border: `1px solid ${T.border}`,
+              fontSize: 12,
+              fontFamily: T.font,
+              background: T.surface,
+              color: T.text,
+              resize: "vertical",
+              boxSizing: "border-box",
+              lineHeight: 1.5,
+              marginBottom: 10,
+            }}
+          />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 16,
+            }}
+          >
+            <span style={{ fontSize: 11, color: T.textMuted, marginRight: 2 }}>
+              {lang === "ja" ? "件数:" : "Count:"}
+            </span>
+            {[3, 5, 7].map((n) => (
+              <button
+                key={n}
+                onClick={() => setGenCount(n)}
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  border: `1px solid ${genCount === n ? T.accent : T.border}`,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  fontFamily: T.font,
+                  background: genCount === n ? T.accentLight : T.surface,
+                  color: genCount === n ? T.accentDark : T.textSecondary,
+                  transition: "all 0.15s",
+                }}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+
+          {genError && (
+            <div
+              style={{
+                background: T.dangerLight,
+                border: `1px solid ${T.dangerBorder}`,
+                borderRadius: T.radius,
+                padding: 10,
+                fontSize: 12,
+                color: T.danger,
+                marginBottom: 12,
+              }}
+            >
+              {genError}
+            </div>
+          )}
+
+          {genLoading && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[1, 2, 3].map((n) => (
+                <div
+                  key={n}
+                  style={{
+                    padding: 16,
+                    background: T.bg,
+                    borderRadius: T.radius,
+                    border: `1px solid ${T.borderSubtle}`,
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 12,
+                      width: "75%",
+                      background: T.border,
+                      borderRadius: 4,
+                      marginBottom: 8,
+                      animation: "pulse 1.5s ease-in-out infinite",
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 10,
+                      width: "90%",
+                      background: T.borderSubtle,
+                      borderRadius: 4,
+                      marginBottom: 4,
+                      animation: "pulse 1.5s ease-in-out 0.2s infinite",
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 10,
+                      width: "60%",
+                      background: T.borderSubtle,
+                      borderRadius: 4,
+                      animation: "pulse 1.5s ease-in-out 0.4s infinite",
+                    }}
+                  />
+                </div>
+              ))}
+              <style
+                dangerouslySetInnerHTML={{
+                  __html:
+                    "@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }",
+                }}
+              />
+            </div>
+          )}
+
+          {!genResult && !genLoading && !genError && (
+            <div
+              style={{
+                padding: "24px 16px",
+                textAlign: "center",
+                border: `1px dashed ${T.border}`,
+                borderRadius: T.radius,
+                color: T.textMuted,
+                fontSize: 12,
+              }}
+            >
+              {lang === "ja"
+                ? "意図を入力してバリアントを生成"
+                : "Describe your intent and generate variants"}
+            </div>
+          )}
+
+          {genResult && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {(genResult.variants || []).map((v, i) => (
                 <div
                   key={i}
                   style={{
-                    background: T.surface,
-                    borderRadius: 6,
+                    background: T.bg,
+                    borderRadius: T.radius,
+                    border: `1px solid ${T.borderSubtle}`,
                     padding: 12,
-                    marginBottom:
-                      i < (result.alternatives || []).length - 1 ? 8 : 0,
-                    border: `1px solid ${T.successBorder}`,
                   }}
                 >
                   <div
@@ -571,29 +936,53 @@ export default function AIPanel({
                       fontWeight: 600,
                       fontSize: 13,
                       color: T.text,
-                      marginBottom: 4,
+                      marginBottom: 3,
                     }}
                   >
-                    "{alt.subject}"
+                    {v.subject}
                   </div>
                   <div
                     style={{
                       fontSize: 12,
-                      color: T.textSecondary,
-                      marginBottom: 3,
+                      color: T.textMuted,
+                      marginBottom: 6,
                     }}
                   >
-                    {alt.rationale}
+                    {v.preview}
                   </div>
                   <div
-                    style={{ fontSize: 11, color: T.accent, fontWeight: 600 }}
+                    style={{
+                      fontSize: 11,
+                      color: T.textSecondary,
+                      marginBottom: 10,
+                      lineHeight: 1.5,
+                    }}
                   >
-                    {alt.best_for}
+                    {v.rationale}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <SmallButton
+                      onClick={() => {
+                        updateActive("subject", v.subject);
+                        updateActive("preview", v.preview);
+                      }}
+                      active
+                      style={{ fontSize: 11, padding: "3px 10px" }}
+                    >
+                      {lang === "ja" ? "適用" : "Apply"}
+                    </SmallButton>
+                    <SmallButton
+                      onClick={() => addCandidateFrom(v.subject, v.preview)}
+                      disabled={candidatesCount >= 5}
+                      style={{ fontSize: 11, padding: "3px 10px" }}
+                    >
+                      + {lang === "ja" ? "候補" : "Candidate"}
+                    </SmallButton>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

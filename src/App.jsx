@@ -56,6 +56,15 @@ export default function SubjectLab() {
     ]);
     setActiveId(newId);
   };
+  const addCandidateFrom = (subject, preview) => {
+    if (candidates.length >= 5) return;
+    const newId = Math.max(...candidates.map((c) => c.id)) + 1;
+    setCandidates((prev) => [
+      ...prev,
+      { id: newId, sender: active.sender, subject, preview, note: "" },
+    ]);
+    setActiveId(newId);
+  };
   const removeCandidate = (id) => {
     if (candidates.length <= 1) return;
     const next = candidates.filter((c) => c.id !== id);
@@ -468,6 +477,9 @@ export default function SubjectLab() {
                 lang={lang}
                 candidates={candidates}
                 industry={industry}
+                updateActive={updateActive}
+                addCandidateFrom={addCandidateFrom}
+                candidatesCount={candidates.length}
               />
             </Suspense>
           </div>
